@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 
 from aiohttp import web
 from aiogram import Bot, Dispatcher
@@ -34,10 +35,12 @@ async def main() -> None:
     await bot.delete_webhook(drop_pending_updates=True)
     logging.info("%s bot started", settings.shop_name)
     logging.info(
-        "Mini App listening on %s:%s public URL: %s",
+        "Mini App listening on %s:%s public URL: %s (PORT=%s DOMAIN=%s)",
         settings.webapp_host,
         settings.listen_port,
         settings.public_webapp_url,
+        os.getenv("PORT"),
+        os.getenv("DOMAIN"),
     )
 
     try:

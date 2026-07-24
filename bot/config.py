@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import os
 from functools import cached_property
 
-from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -18,22 +18,27 @@ class Settings(BaseSettings):
     shop_name: str = "КнязьMobile"
 
     webapp_host: str = "0.0.0.0"
-    webapp_port: int = 8765
-    # Bothost injects PORT / DOMAIN when web UI is enabled
-    port: int | None = Field(default=None, validation_alias="PORT")
-    domain: str | None = Field(default=None, validation_alias="DOMAIN")
+    # Bothost default internal port is 3000 — panel Port must match this
+    webapp_port: int = 3000
     webapp_url: str = ""
     allow_insecure_orders: bool = False
 
     @cached_property
     def listen_port(self) -> int:
-        return self.port or self.webapp_port
+        # Read PORT directly: Bothost proxy routes to this port
+        raw = os.getenv("PORT") or os.getenv("WEBAPP_PORT")
+        if raw:
+            try:
+                return int(raw)
+            except ValueError:
+                pass
+        return self.webapp_port
 
     @cached_property
     def public_webapp_url(self) -> str:
         # Prefer Bothost DOMAIN so stale local tunnels in WEBAPP_URL don't break Mini App
-        if self.domain:
-            domain = self.domain.strip()
+        domain = (os.getenv("DOMAIN") or "").strip()
+        if domain:
             if domain.startswith("http://") or domain.startswith("https://"):
                 return domain.rstrip("/")
             return f"https://{domain}".rstrip("/")
