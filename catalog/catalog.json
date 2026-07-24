@@ -1,4 +1,4 @@
-﻿{
+{
   "categories": [
     {
       "id": "iphone",
@@ -34,25 +34,25 @@
           "id": "black",
           "name": "Black",
           "hex": "#1c1c1e",
-          "image": null
+          "image": "/images/colors/iphone-17-black.png"
         },
         {
           "id": "white",
           "name": "White",
           "hex": "#f2f2f7",
-          "image": null
+          "image": "/images/colors/iphone-17-white.png"
         },
         {
           "id": "mist",
           "name": "Mist Blue",
           "hex": "#7fa8c9",
-          "image": null
+          "image": "/images/colors/iphone-17-mist.png"
         },
         {
           "id": "sage",
           "name": "Sage",
           "hex": "#8fa88a",
-          "image": null
+          "image": "/images/colors/iphone-17-sage.png"
         }
       ],
       "configs": [
@@ -69,7 +69,7 @@
           "in_stock": true
         }
       ],
-      "image": "/images/iphone-17.png"
+      "image": "/images/colors/iphone-17-black.png"
     },
     {
       "id": "iphone-17e",
@@ -83,19 +83,19 @@
           "id": "black",
           "name": "Timeless Black",
           "hex": "#111111",
-          "image": null
+          "image": "/images/colors/iphone-17e-black.png"
         },
         {
           "id": "white",
           "name": "White",
           "hex": "#f5f5f5",
-          "image": null
+          "image": "/images/colors/iphone-17e-white.png"
         },
         {
           "id": "pink",
           "name": "Soft Pink",
           "hex": "#f2c4cf",
-          "image": null
+          "image": "/images/colors/iphone-17e-pink.png"
         }
       ],
       "configs": [
@@ -112,7 +112,7 @@
           "in_stock": true
         }
       ],
-      "image": "/images/iphone-17e.png"
+      "image": "/images/colors/iphone-17e-black.png"
     },
     {
       "id": "iphone-17-pro",
@@ -126,19 +126,19 @@
           "id": "cosmic",
           "name": "Cosmic Orange",
           "hex": "#d35400",
-          "image": null
+          "image": "/images/colors/iphone-17-pro-cosmic.png"
         },
         {
           "id": "deep-blue",
           "name": "Deep Blue",
           "hex": "#1f3a5f",
-          "image": null
+          "image": "/images/colors/iphone-17-pro-deep-blue.png"
         },
         {
           "id": "silver",
           "name": "Silver",
           "hex": "#c9ccd1",
-          "image": null
+          "image": "/images/colors/iphone-17-pro-silver.png"
         }
       ],
       "configs": [
@@ -161,7 +161,7 @@
           "in_stock": true
         }
       ],
-      "image": "/images/iphone-17-pro.png"
+      "image": "/images/colors/iphone-17-pro-cosmic.png"
     },
     {
       "id": "iphone-17-promax",
@@ -175,19 +175,19 @@
           "id": "cosmic",
           "name": "Cosmic Orange",
           "hex": "#d35400",
-          "image": null
+          "image": "/images/colors/iphone-17-promax-cosmic.png"
         },
         {
           "id": "deep-blue",
           "name": "Deep Blue",
           "hex": "#1f3a5f",
-          "image": null
+          "image": "/images/colors/iphone-17-promax-deep-blue.png"
         },
         {
           "id": "silver",
           "name": "Silver",
           "hex": "#c9ccd1",
-          "image": null
+          "image": "/images/colors/iphone-17-promax-silver.png"
         }
       ],
       "configs": [
@@ -210,7 +210,7 @@
           "in_stock": false
         }
       ],
-      "image": "/images/iphone-17-promax.png"
+      "image": "/images/colors/iphone-17-promax-cosmic.png"
     },
     {
       "id": "iphone-16",
@@ -224,31 +224,31 @@
           "id": "black",
           "name": "Black",
           "hex": "#1c1c1e",
-          "image": null
+          "image": "/images/colors/iphone-16-black.png"
         },
         {
           "id": "white",
           "name": "White",
           "hex": "#f5f5f7",
-          "image": null
+          "image": "/images/colors/iphone-16-white.png"
         },
         {
           "id": "pink",
           "name": "Pink",
           "hex": "#f5c6d0",
-          "image": null
+          "image": "/images/colors/iphone-16-pink.png"
         },
         {
           "id": "teal",
           "name": "Teal",
           "hex": "#4a8f8a",
-          "image": null
+          "image": "/images/colors/iphone-16-teal.png"
         },
         {
           "id": "ultramarine",
           "name": "Ultramarine",
           "hex": "#3b5bdb",
-          "image": null
+          "image": "/images/colors/iphone-16-ultramarine.png"
         }
       ],
       "configs": [
@@ -265,7 +265,7 @@
           "in_stock": true
         }
       ],
-      "image": "/images/iphone-16.png"
+      "image": "/images/colors/iphone-16-black.png"
     },
     {
       "id": "s25-ultra",
@@ -279,25 +279,25 @@
           "id": "titanium-black",
           "name": "Titanium Black",
           "hex": "#2b2b2b",
-          "image": null
+          "image": "/images/colors/s25-ultra-titanium-black.png"
         },
         {
           "id": "titanium-gray",
           "name": "Titanium Gray",
           "hex": "#8a8d91",
-          "image": null
+          "image": "/images/colors/s25-ultra-titanium-gray.png"
         },
         {
           "id": "titanium-silver",
           "name": "Titanium Silverblue",
           "hex": "#a7b4c4",
-          "image": null
+          "image": "/images/colors/s25-ultra-titanium-silver.png"
         },
         {
           "id": "titanium-white",
           "name": "Titanium Whitesilver",
           "hex": "#e8e6e1",
-          "image": null
+          "image": "/images/colors/s25-ultra-titanium-white.png"
         }
       ],
       "configs": [
@@ -314,7 +314,7 @@
           "in_stock": true
         }
       ],
-      "image": "/images/s25-ultra.png"
+      "image": "/images/colors/s25-ultra-titanium-black.png"
     },
     {
       "id": "s25-plus",
@@ -328,25 +328,25 @@
           "id": "navy",
           "name": "Navy",
           "hex": "#1e2a44",
-          "image": null
+          "image": "/images/colors/s25-plus-navy.png"
         },
         {
           "id": "silver",
           "name": "Silver Shadow",
           "hex": "#b8bcc2",
-          "image": null
+          "image": "/images/colors/s25-plus-silver.png"
         },
         {
           "id": "mint",
           "name": "Mint",
           "hex": "#9fc9b4",
-          "image": null
+          "image": "/images/colors/s25-plus-mint.png"
         },
         {
           "id": "blue",
           "name": "Icy Blue",
           "hex": "#9eb6d4",
-          "image": null
+          "image": "/images/colors/s25-plus-blue.png"
         }
       ],
       "configs": [
@@ -363,7 +363,7 @@
           "in_stock": true
         }
       ],
-      "image": "/images/s25-plus.png"
+      "image": "/images/colors/s25-plus-navy.png"
     },
     {
       "id": "s25",
@@ -377,25 +377,25 @@
           "id": "navy",
           "name": "Navy",
           "hex": "#1e2a44",
-          "image": null
+          "image": "/images/colors/s25-navy.png"
         },
         {
           "id": "silver",
           "name": "Silver Shadow",
           "hex": "#b8bcc2",
-          "image": null
+          "image": "/images/colors/s25-silver.png"
         },
         {
           "id": "mint",
           "name": "Mint",
           "hex": "#9fc9b4",
-          "image": null
+          "image": "/images/colors/s25-mint.png"
         },
         {
           "id": "blue",
           "name": "Icy Blue",
           "hex": "#9eb6d4",
-          "image": null
+          "image": "/images/colors/s25-blue.png"
         }
       ],
       "configs": [
@@ -412,7 +412,7 @@
           "in_stock": true
         }
       ],
-      "image": "/images/s25.png"
+      "image": "/images/colors/s25-navy.png"
     },
     {
       "id": "s25-fe",
@@ -426,25 +426,25 @@
           "id": "navy",
           "name": "Navy",
           "hex": "#22304a",
-          "image": null
+          "image": "/images/colors/s25-fe-navy.png"
         },
         {
           "id": "white",
           "name": "White",
           "hex": "#f0f0f0",
-          "image": null
+          "image": "/images/colors/s25-fe-white.png"
         },
         {
           "id": "blue",
           "name": "Blue",
           "hex": "#6f93c4",
-          "image": null
+          "image": "/images/colors/s25-fe-blue.png"
         },
         {
           "id": "graphite",
           "name": "Graphite",
           "hex": "#4a4a4a",
-          "image": null
+          "image": "/images/colors/s25-fe-graphite.png"
         }
       ],
       "configs": [
@@ -455,7 +455,7 @@
           "in_stock": true
         }
       ],
-      "image": "/images/s25-fe.png"
+      "image": "/images/colors/s25-fe-navy.png"
     },
     {
       "id": "pixel-10",
@@ -469,25 +469,25 @@
           "id": "indigo",
           "name": "Indigo",
           "hex": "#3f4c8c",
-          "image": null
+          "image": "/images/colors/pixel-10-indigo.png"
         },
         {
           "id": "lemongrass",
           "name": "Lemongrass",
           "hex": "#c6d36e",
-          "image": null
+          "image": "/images/colors/pixel-10-lemongrass.png"
         },
         {
           "id": "obsidian",
           "name": "Obsidian",
           "hex": "#1a1a1a",
-          "image": null
+          "image": "/images/colors/pixel-10-obsidian.png"
         },
         {
           "id": "frost",
           "name": "Frost",
           "hex": "#c9d7e3",
-          "image": null
+          "image": "/images/colors/pixel-10-frost.png"
         }
       ],
       "configs": [
@@ -504,7 +504,7 @@
           "in_stock": true
         }
       ],
-      "image": "/images/pixel-10.png"
+      "image": "/images/colors/pixel-10-indigo.png"
     },
     {
       "id": "pixel-10-pro",
@@ -518,25 +518,25 @@
           "id": "moonstone",
           "name": "Moonstone",
           "hex": "#9aa3ad",
-          "image": null
+          "image": "/images/colors/pixel-10-pro-moonstone.png"
         },
         {
           "id": "obsidian",
           "name": "Obsidian",
           "hex": "#1a1a1a",
-          "image": null
+          "image": "/images/colors/pixel-10-pro-obsidian.png"
         },
         {
           "id": "jade",
           "name": "Jade",
           "hex": "#5f7f6a",
-          "image": null
+          "image": "/images/colors/pixel-10-pro-jade.png"
         },
         {
           "id": "porcelain",
           "name": "Porcelain",
           "hex": "#ece7df",
-          "image": null
+          "image": "/images/colors/pixel-10-pro-porcelain.png"
         }
       ],
       "configs": [
@@ -553,7 +553,7 @@
           "in_stock": true
         }
       ],
-      "image": "/images/pixel-10-pro.png"
+      "image": "/images/colors/pixel-10-pro-moonstone.png"
     },
     {
       "id": "pixel-10-pro-xl",
@@ -567,25 +567,25 @@
           "id": "moonstone",
           "name": "Moonstone",
           "hex": "#9aa3ad",
-          "image": null
+          "image": "/images/colors/pixel-10-pro-xl-moonstone.png"
         },
         {
           "id": "obsidian",
           "name": "Obsidian",
           "hex": "#1a1a1a",
-          "image": null
+          "image": "/images/colors/pixel-10-pro-xl-obsidian.png"
         },
         {
           "id": "jade",
           "name": "Jade",
           "hex": "#5f7f6a",
-          "image": null
+          "image": "/images/colors/pixel-10-pro-xl-jade.png"
         },
         {
           "id": "porcelain",
           "name": "Porcelain",
           "hex": "#ece7df",
-          "image": null
+          "image": "/images/colors/pixel-10-pro-xl-porcelain.png"
         }
       ],
       "configs": [
@@ -602,7 +602,7 @@
           "in_stock": true
         }
       ],
-      "image": "/images/pixel-10-pro-xl.png"
+      "image": "/images/colors/pixel-10-pro-xl-moonstone.png"
     },
     {
       "id": "macbook-neo",
@@ -616,25 +616,25 @@
           "id": "silver",
           "name": "Silver",
           "hex": "#c8ccd1",
-          "image": null
+          "image": "/images/colors/macbook-neo-silver.png"
         },
         {
           "id": "indigo",
           "name": "Indigo",
           "hex": "#2c3e6b",
-          "image": null
+          "image": "/images/colors/macbook-neo-indigo.png"
         },
         {
           "id": "pink",
           "name": "Pink",
           "hex": "#e8b4c4",
-          "image": null
+          "image": "/images/colors/macbook-neo-pink.png"
         },
         {
           "id": "citrus",
           "name": "Citrus",
           "hex": "#e3c35a",
-          "image": null
+          "image": "/images/colors/macbook-neo-citrus.png"
         }
       ],
       "configs": [
@@ -645,7 +645,7 @@
           "in_stock": true
         }
       ],
-      "image": "/images/macbook-neo.png"
+      "image": "/images/colors/macbook-neo-silver.png"
     }
   ]
 }

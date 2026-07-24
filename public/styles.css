@@ -176,6 +176,8 @@ body {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  transition: opacity 0.18s ease;
+}
   display: block;
 }
 

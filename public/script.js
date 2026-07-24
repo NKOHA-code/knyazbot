@@ -84,7 +84,33 @@
       const color = product.colors.find((c) => c.id === colorId);
       if (color?.image) return color.image;
     }
+    const firstWithImage = product.colors?.find((c) => c.image);
+    if (firstWithImage?.image) return firstWithImage.image;
     return product.image || "";
+  }
+
+  function setDetailImage(src, alt) {
+    if (!src) {
+      els.detailImage.removeAttribute("src");
+      els.detailImage.alt = alt || "";
+      return;
+    }
+    if (els.detailImage.src.endsWith(src) || els.detailImage.getAttribute("src") === src) {
+      els.detailImage.alt = alt || "";
+      return;
+    }
+    els.detailImage.style.opacity = "0.35";
+    const img = new Image();
+    img.onload = () => {
+      els.detailImage.src = src;
+      els.detailImage.alt = alt || "";
+      els.detailImage.style.opacity = "1";
+    };
+    img.onerror = () => {
+      els.detailImage.src = src;
+      els.detailImage.style.opacity = "1";
+    };
+    img.src = src;
   }
 
   function renderList() {
@@ -124,8 +150,7 @@
     const img = productImage(p, state.colorId);
     els.detailName.textContent = p.name;
     els.detailNote.textContent = p.note || "";
-    els.detailImage.src = img;
-    els.detailImage.alt = p.name;
+    setDetailImage(img, `${p.name} · ${color?.name || ""}`.trim());
     els.detailGlow.style.background = color?.hex || "transparent";
     if (p.badge) {
       els.detailBadge.textContent = p.badge;

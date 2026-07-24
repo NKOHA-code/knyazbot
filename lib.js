@@ -54,7 +54,9 @@ function loadCatalog() {
   if (!file) {
     throw new Error("catalog.json not found (checked catalog/, public/, data/)");
   }
-  const raw = JSON.parse(fs.readFileSync(file, "utf8"));
+  // Strip UTF-8 BOM (EF BB BF) — Windows editors often write it
+  const text = fs.readFileSync(file, "utf8").replace(/^\uFEFF/, "");
+  const raw = JSON.parse(text);
   const products = raw.products.map((p) => {
     const priced = (p.configs || []).map((c) => c.price).filter((n) => n > 0);
     const min = priced.length ? Math.min(...priced) : null;
