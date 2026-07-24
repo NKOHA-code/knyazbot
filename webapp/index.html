@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>КнязьMobile</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/webapp/styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="top">
+      <div class="brand">
+        <span class="brand-mark">♔</span>
+        <div>
+          <div class="brand-name">КнязьMobile</div>
+          <div class="brand-sub">техника · рассрочка · доставка</div>
+        </div>
+      </div>
+    </header>
+
+    <nav id="categories" class="cats" aria-label="Категории"></nav>
+
+    <main id="list-view" class="view">
+      <div id="product-list" class="grid"></div>
+    </main>
+
+    <main id="detail-view" class="view hidden">
+      <button type="button" class="back" id="back-btn">← Назад</button>
+      <section class="detail">
+        <div class="media" id="detail-media">
+          <img id="detail-image" alt="" />
+          <div class="media-glow" id="detail-glow"></div>
+        </div>
+        <div class="detail-head">
+          <div id="detail-badge" class="badge hidden"></div>
+          <h1 id="detail-name"></h1>
+          <p id="detail-note" class="muted"></p>
+          <p id="detail-gift" class="gift hidden"></p>
+        </div>
+
+        <div class="block">
+          <div class="block-label">Цвет</div>
+          <div id="color-list" class="colors"></div>
+          <div id="color-name" class="choice-caption"></div>
+        </div>
+
+        <div class="block">
+          <div class="block-label">Конфигурация</div>
+          <div id="config-list" class="configs"></div>
+        </div>
+
+        <div class="price-row">
+          <div>
+            <div class="block-label">Цена</div>
+            <div id="detail-price" class="price">—</div>
+          </div>
+          <div id="detail-stock" class="stock"></div>
+        </div>
+
+        <div class="block">
+          <div class="block-label">Оплата</div>
+          <div id="payment-list" class="payments"></div>
+        </div>
+
+        <label class="field">
+          <span class="block-label">Телефон</span>
+          <input id="phone" type="tel" inputmode="tel" placeholder="+375XXXXXXXXX" autocomplete="tel" />
+        </label>
+
+        <button type="button" class="cta" id="order-btn">Оставить заявку</button>
+        <p class="fineprint">Менеджер подтвердит наличие, цвет и финальную цену.</p>
+      </section>
+    </main>
+
+    <div id="toast" class="toast hidden"></div>
+  </div>
+  <script src="/webapp/app.js"></script>
+</body>
+</html>

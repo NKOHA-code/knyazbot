@@ -1,0 +1,457 @@
+:root {
+  --bg: #12110f;
+  --bg-elev: #1c1a17;
+  --bg-soft: #242119;
+  --line: rgba(232, 208, 160, 0.14);
+  --text: #f4efe6;
+  --muted: #a89f90;
+  --gold: #d4b36a;
+  --gold-strong: #e6c57a;
+  --ok: #7fba7a;
+  --danger: #d97868;
+  --shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+  --radius: 18px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  font-family: "Manrope", sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background:
+    radial-gradient(1200px 500px at 10% -10%, rgba(212, 179, 106, 0.18), transparent 55%),
+    radial-gradient(900px 420px at 100% 0%, rgba(90, 70, 40, 0.25), transparent 50%),
+    linear-gradient(180deg, #171511 0%, #0f0e0c 100%);
+}
+
+body {
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 16px 16px calc(28px + var(--safe-bottom));
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.brand {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.brand-mark {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, #3a3224, #1b1814);
+  border: 1px solid var(--line);
+  color: var(--gold);
+  font-size: 22px;
+}
+
+.brand-name {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.brand-sub {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.cats {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  margin-bottom: 16px;
+  scrollbar-width: none;
+}
+
+.cats::-webkit-scrollbar {
+  display: none;
+}
+
+.cat {
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 10px 14px;
+  font: 600 13px/1 Manrope, sans-serif;
+  cursor: pointer;
+}
+
+.cat.active {
+  background: linear-gradient(135deg, rgba(212, 179, 106, 0.28), rgba(212, 179, 106, 0.08));
+  border-color: rgba(212, 179, 106, 0.45);
+  color: var(--gold-strong);
+}
+
+.grid {
+  display: grid;
+  gap: 12px;
+}
+
+.card {
+  text-align: left;
+  width: 100%;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(36, 33, 25, 0.95), rgba(22, 20, 17, 0.95));
+  border-radius: var(--radius);
+  padding: 0;
+  overflow: hidden;
+  color: inherit;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: transform 0.18s ease, border-color 0.18s ease;
+}
+
+.card-photo {
+  position: relative;
+  height: 190px;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(212, 179, 106, 0.16), transparent 55%),
+    #171511;
+  overflow: hidden;
+}
+
+.card-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transform: scale(1.02);
+}
+
+.card-body {
+  padding: 14px 16px 16px;
+}
+
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.media {
+  position: relative;
+  margin: -4px -4px 14px;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #14120f;
+  aspect-ratio: 4 / 5;
+  max-height: 360px;
+}
+
+.media img {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.media-glow {
+  position: absolute;
+  inset: 18% 20%;
+  border-radius: 40%;
+  filter: blur(42px);
+  opacity: 0.45;
+  z-index: 0;
+  transition: background 0.25s ease;
+}
+
+.card:active {
+  transform: scale(0.985);
+}
+
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.card-name {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 26px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.card-meta {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.card-price {
+  margin-top: 14px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--gold-strong);
+}
+
+.swatches {
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #1a140c;
+  background: var(--gold);
+}
+
+.view.hidden,
+.hidden {
+  display: none !important;
+}
+
+.back {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: 600 14px Manrope, sans-serif;
+  padding: 0 0 14px;
+  cursor: pointer;
+}
+
+.detail {
+  border: 1px solid var(--line);
+  background: rgba(28, 26, 23, 0.92);
+  border-radius: 24px;
+  padding: 18px;
+  box-shadow: var(--shadow);
+}
+
+.detail-head h1 {
+  margin: 10px 0 6px;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 34px;
+  line-height: 1.05;
+}
+
+.muted {
+  color: var(--muted);
+  margin: 0;
+  font-size: 14px;
+}
+
+.gift {
+  margin: 10px 0 0;
+  color: var(--gold-strong);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.block {
+  margin-top: 18px;
+}
+
+.block-label {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.colors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.color-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  position: relative;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+.color-btn.active {
+  border-color: var(--gold-strong);
+  box-shadow: 0 0 0 3px rgba(212, 179, 106, 0.25);
+}
+
+.choice-caption {
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.configs,
+.payments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font: 600 13px/1.2 Manrope, sans-serif;
+  cursor: pointer;
+}
+
+.chip.active {
+  border-color: rgba(212, 179, 106, 0.55);
+  background: rgba(212, 179, 106, 0.14);
+  color: var(--gold-strong);
+}
+
+.chip:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.price-row {
+  margin-top: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 12px;
+}
+
+.price {
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--gold-strong);
+  font-family: "Cormorant Garamond", serif;
+}
+
+.stock {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ok);
+}
+
+.stock.out {
+  color: var(--danger);
+}
+
+.field {
+  display: block;
+  margin-top: 18px;
+}
+
+.field input {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: var(--bg-soft);
+  color: var(--text);
+  border-radius: 14px;
+  padding: 14px 16px;
+  font: 500 16px Manrope, sans-serif;
+  outline: none;
+}
+
+.field input:focus {
+  border-color: rgba(212, 179, 106, 0.55);
+}
+
+.cta {
+  width: 100%;
+  margin-top: 18px;
+  border: 0;
+  border-radius: 16px;
+  padding: 16px 18px;
+  font: 700 16px Manrope, sans-serif;
+  color: #1a140c;
+  background: linear-gradient(135deg, #edd39a, #c9a45a);
+  cursor: pointer;
+  box-shadow: 0 12px 28px rgba(201, 164, 90, 0.28);
+}
+
+.cta:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.fineprint {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(18px + var(--safe-bottom));
+  transform: translateX(-50%);
+  background: #2a261f;
+  border: 1px solid var(--line);
+  color: var(--text);
+  padding: 12px 16px;
+  border-radius: 14px;
+  font-size: 14px;
+  max-width: calc(100% - 32px);
+  box-shadow: var(--shadow);
+  z-index: 20;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .card,
+  .cta,
+  .chip,
+  .cat {
+    transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+  }
+
+  .cta:hover {
+    transform: translateY(-1px);
+  }
+}
