@@ -18,8 +18,8 @@ class Settings(BaseSettings):
     shop_name: str = "КнязьMobile"
 
     webapp_host: str = "0.0.0.0"
-    # Must match Bothost panel "Port" (locked to 8765 for this bot)
-    webapp_port: int = 8765
+    # Bothost default panel port for new bots
+    webapp_port: int = 3000
     webapp_url: str = ""
     allow_insecure_orders: bool = False
 
