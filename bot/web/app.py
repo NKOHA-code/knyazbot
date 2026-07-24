@@ -27,6 +27,7 @@ def create_web_app(bot: Bot) -> web.Application:
     app.router.add_get("/", handle_index)
     app.router.add_get("/api/catalog", handle_catalog)
     app.router.add_get("/api/health", handle_health)
+    app.router.add_get("/health", handle_health)
     app.router.add_post("/api/order", handle_order)
     app.router.add_static("/webapp/", WEBAPP_DIR, name="webapp")
     return app
