@@ -282,8 +282,32 @@
 
   async function boot() {
     const res = await fetch("/api/catalog");
-    if (!res.ok) throw new Error("Не удалось загрузить каталог");
-    state.catalog = await res.json();
+    if (!res.ok) {
+      // Fallback if API fails but static file is available
+      const fallback = await fetch("/catalog.json");
+      if (!fallback.ok) throw new Error("Не удалось загрузить каталог");
+      state.catalog = await fallback.json();
+      if (!state.catalog.payments) {
+        state.catalog.payments = [
+          { id: "cash", title: "Наличные / карта" },
+          { id: "installment", title: "Рассрочка" },
+          { id: "leasing", title: "Лизинг" },
+        ];
+      }
+    } else {
+      state.catalog = await res.json();
+    }
+    // normalize products if raw file without price_from
+    state.catalog.products = (state.catalog.products || []).map((p) => {
+      if (p.price_from) return p;
+      const priced = (p.configs || []).map((c) => c.price).filter((n) => n > 0);
+      const min = priced.length ? Math.min(...priced) : null;
+      return {
+        ...p,
+        min_price: min,
+        price_from: min == null ? "цену уточнит менеджер" : `от ${min} BYN`,
+      };
+    });
     renderCategories();
     renderList();
   }

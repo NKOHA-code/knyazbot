@@ -1,0 +1,651 @@
+﻿{
+  "categories": [
+    {
+      "id": "iphone",
+      "title": "iPhone",
+      "emoji": "🍎"
+    },
+    {
+      "id": "samsung",
+      "title": "Samsung",
+      "emoji": "📱"
+    },
+    {
+      "id": "pixel",
+      "title": "Pixel",
+      "emoji": "🔵"
+    },
+    {
+      "id": "mac",
+      "title": "Mac",
+      "emoji": "💻"
+    }
+  ],
+  "products": [
+    {
+      "id": "iphone-17",
+      "category": "iphone",
+      "name": "iPhone 17",
+      "badge": "Хит",
+      "gift": "чехол + защитное стекло",
+      "note": "Новый оригинал, заводская упаковка",
+      "colors": [
+        {
+          "id": "black",
+          "name": "Black",
+          "hex": "#1c1c1e",
+          "image": null
+        },
+        {
+          "id": "white",
+          "name": "White",
+          "hex": "#f2f2f7",
+          "image": null
+        },
+        {
+          "id": "mist",
+          "name": "Mist Blue",
+          "hex": "#7fa8c9",
+          "image": null
+        },
+        {
+          "id": "sage",
+          "name": "Sage",
+          "hex": "#8fa88a",
+          "image": null
+        }
+      ],
+      "configs": [
+        {
+          "id": "256",
+          "storage": "256GB",
+          "price": 2150,
+          "in_stock": true
+        },
+        {
+          "id": "512",
+          "storage": "512GB",
+          "price": 2490,
+          "in_stock": true
+        }
+      ],
+      "image": "/images/iphone-17.png"
+    },
+    {
+      "id": "iphone-17e",
+      "category": "iphone",
+      "name": "iPhone 17e",
+      "badge": "Новинка",
+      "gift": "чехол + защитное стекло",
+      "note": "Самый доступный в линейке 17",
+      "colors": [
+        {
+          "id": "black",
+          "name": "Timeless Black",
+          "hex": "#111111",
+          "image": null
+        },
+        {
+          "id": "white",
+          "name": "White",
+          "hex": "#f5f5f5",
+          "image": null
+        },
+        {
+          "id": "pink",
+          "name": "Soft Pink",
+          "hex": "#f2c4cf",
+          "image": null
+        }
+      ],
+      "configs": [
+        {
+          "id": "128",
+          "storage": "128GB",
+          "price": 1890,
+          "in_stock": true
+        },
+        {
+          "id": "256",
+          "storage": "256GB",
+          "price": 2090,
+          "in_stock": true
+        }
+      ],
+      "image": "/images/iphone-17e.png"
+    },
+    {
+      "id": "iphone-17-pro",
+      "category": "iphone",
+      "name": "iPhone 17 Pro",
+      "badge": null,
+      "gift": "чехол MagSafe + стекло",
+      "note": "Гарантия 12 мес + сервис 24 мес",
+      "colors": [
+        {
+          "id": "cosmic",
+          "name": "Cosmic Orange",
+          "hex": "#d35400",
+          "image": null
+        },
+        {
+          "id": "deep-blue",
+          "name": "Deep Blue",
+          "hex": "#1f3a5f",
+          "image": null
+        },
+        {
+          "id": "silver",
+          "name": "Silver",
+          "hex": "#c9ccd1",
+          "image": null
+        }
+      ],
+      "configs": [
+        {
+          "id": "256",
+          "storage": "256GB",
+          "price": 3699,
+          "in_stock": true
+        },
+        {
+          "id": "512",
+          "storage": "512GB",
+          "price": 4190,
+          "in_stock": true
+        },
+        {
+          "id": "1tb",
+          "storage": "1TB",
+          "price": 4690,
+          "in_stock": true
+        }
+      ],
+      "image": "/images/iphone-17-pro.png"
+    },
+    {
+      "id": "iphone-17-promax",
+      "category": "iphone",
+      "name": "iPhone 17 Pro Max",
+      "badge": "Флагман",
+      "gift": "чехол + защитное стекло",
+      "note": "Максимум экрана и батареи",
+      "colors": [
+        {
+          "id": "cosmic",
+          "name": "Cosmic Orange",
+          "hex": "#d35400",
+          "image": null
+        },
+        {
+          "id": "deep-blue",
+          "name": "Deep Blue",
+          "hex": "#1f3a5f",
+          "image": null
+        },
+        {
+          "id": "silver",
+          "name": "Silver",
+          "hex": "#c9ccd1",
+          "image": null
+        }
+      ],
+      "configs": [
+        {
+          "id": "256",
+          "storage": "256GB",
+          "price": 4050,
+          "in_stock": true
+        },
+        {
+          "id": "512",
+          "storage": "512GB",
+          "price": 4550,
+          "in_stock": true
+        },
+        {
+          "id": "1tb",
+          "storage": "1TB",
+          "price": 5050,
+          "in_stock": false
+        }
+      ],
+      "image": "/images/iphone-17-promax.png"
+    },
+    {
+      "id": "iphone-16",
+      "category": "iphone",
+      "name": "iPhone 16",
+      "badge": null,
+      "gift": "чехол + защитное стекло",
+      "note": "Рассрочка почти всем",
+      "colors": [
+        {
+          "id": "black",
+          "name": "Black",
+          "hex": "#1c1c1e",
+          "image": null
+        },
+        {
+          "id": "white",
+          "name": "White",
+          "hex": "#f5f5f7",
+          "image": null
+        },
+        {
+          "id": "pink",
+          "name": "Pink",
+          "hex": "#f5c6d0",
+          "image": null
+        },
+        {
+          "id": "teal",
+          "name": "Teal",
+          "hex": "#4a8f8a",
+          "image": null
+        },
+        {
+          "id": "ultramarine",
+          "name": "Ultramarine",
+          "hex": "#3b5bdb",
+          "image": null
+        }
+      ],
+      "configs": [
+        {
+          "id": "128",
+          "storage": "128GB",
+          "price": 1990,
+          "in_stock": true
+        },
+        {
+          "id": "256",
+          "storage": "256GB",
+          "price": 2150,
+          "in_stock": true
+        }
+      ],
+      "image": "/images/iphone-16.png"
+    },
+    {
+      "id": "s25-ultra",
+      "category": "samsung",
+      "name": "Galaxy S25 Ultra",
+      "badge": "Топ",
+      "gift": null,
+      "note": "Гарантия 12+24 месяца",
+      "colors": [
+        {
+          "id": "titanium-black",
+          "name": "Titanium Black",
+          "hex": "#2b2b2b",
+          "image": null
+        },
+        {
+          "id": "titanium-gray",
+          "name": "Titanium Gray",
+          "hex": "#8a8d91",
+          "image": null
+        },
+        {
+          "id": "titanium-silver",
+          "name": "Titanium Silverblue",
+          "hex": "#a7b4c4",
+          "image": null
+        },
+        {
+          "id": "titanium-white",
+          "name": "Titanium Whitesilver",
+          "hex": "#e8e6e1",
+          "image": null
+        }
+      ],
+      "configs": [
+        {
+          "id": "256",
+          "storage": "256GB",
+          "price": 2690,
+          "in_stock": true
+        },
+        {
+          "id": "512",
+          "storage": "512GB",
+          "price": 3090,
+          "in_stock": true
+        }
+      ],
+      "image": "/images/s25-ultra.png"
+    },
+    {
+      "id": "s25-plus",
+      "category": "samsung",
+      "name": "Galaxy S25+",
+      "badge": null,
+      "gift": null,
+      "note": "Гарантия 12+24 месяца",
+      "colors": [
+        {
+          "id": "navy",
+          "name": "Navy",
+          "hex": "#1e2a44",
+          "image": null
+        },
+        {
+          "id": "silver",
+          "name": "Silver Shadow",
+          "hex": "#b8bcc2",
+          "image": null
+        },
+        {
+          "id": "mint",
+          "name": "Mint",
+          "hex": "#9fc9b4",
+          "image": null
+        },
+        {
+          "id": "blue",
+          "name": "Icy Blue",
+          "hex": "#9eb6d4",
+          "image": null
+        }
+      ],
+      "configs": [
+        {
+          "id": "256",
+          "storage": "256GB",
+          "price": 2440,
+          "in_stock": true
+        },
+        {
+          "id": "512",
+          "storage": "512GB",
+          "price": 2740,
+          "in_stock": true
+        }
+      ],
+      "image": "/images/s25-plus.png"
+    },
+    {
+      "id": "s25",
+      "category": "samsung",
+      "name": "Galaxy S25",
+      "badge": null,
+      "gift": null,
+      "note": "Гарантия 12+24 месяца",
+      "colors": [
+        {
+          "id": "navy",
+          "name": "Navy",
+          "hex": "#1e2a44",
+          "image": null
+        },
+        {
+          "id": "silver",
+          "name": "Silver Shadow",
+          "hex": "#b8bcc2",
+          "image": null
+        },
+        {
+          "id": "mint",
+          "name": "Mint",
+          "hex": "#9fc9b4",
+          "image": null
+        },
+        {
+          "id": "blue",
+          "name": "Icy Blue",
+          "hex": "#9eb6d4",
+          "image": null
+        }
+      ],
+      "configs": [
+        {
+          "id": "128",
+          "storage": "128GB",
+          "price": 1925,
+          "in_stock": true
+        },
+        {
+          "id": "256",
+          "storage": "256GB",
+          "price": 2140,
+          "in_stock": true
+        }
+      ],
+      "image": "/images/s25.png"
+    },
+    {
+      "id": "s25-fe",
+      "category": "samsung",
+      "name": "Galaxy S25 FE",
+      "badge": "Выгодно",
+      "gift": null,
+      "note": "Гарантия 12+24 месяца",
+      "colors": [
+        {
+          "id": "navy",
+          "name": "Navy",
+          "hex": "#22304a",
+          "image": null
+        },
+        {
+          "id": "white",
+          "name": "White",
+          "hex": "#f0f0f0",
+          "image": null
+        },
+        {
+          "id": "blue",
+          "name": "Blue",
+          "hex": "#6f93c4",
+          "image": null
+        },
+        {
+          "id": "graphite",
+          "name": "Graphite",
+          "hex": "#4a4a4a",
+          "image": null
+        }
+      ],
+      "configs": [
+        {
+          "id": "256",
+          "storage": "256GB",
+          "price": 1770,
+          "in_stock": true
+        }
+      ],
+      "image": "/images/s25-fe.png"
+    },
+    {
+      "id": "pixel-10",
+      "category": "pixel",
+      "name": "Pixel 10",
+      "badge": null,
+      "gift": null,
+      "note": "Новинка Google",
+      "colors": [
+        {
+          "id": "indigo",
+          "name": "Indigo",
+          "hex": "#3f4c8c",
+          "image": null
+        },
+        {
+          "id": "lemongrass",
+          "name": "Lemongrass",
+          "hex": "#c6d36e",
+          "image": null
+        },
+        {
+          "id": "obsidian",
+          "name": "Obsidian",
+          "hex": "#1a1a1a",
+          "image": null
+        },
+        {
+          "id": "frost",
+          "name": "Frost",
+          "hex": "#c9d7e3",
+          "image": null
+        }
+      ],
+      "configs": [
+        {
+          "id": "128",
+          "storage": "12/128",
+          "price": 2180,
+          "in_stock": true
+        },
+        {
+          "id": "256",
+          "storage": "12/256",
+          "price": 2350,
+          "in_stock": true
+        }
+      ],
+      "image": "/images/pixel-10.png"
+    },
+    {
+      "id": "pixel-10-pro",
+      "category": "pixel",
+      "name": "Pixel 10 Pro",
+      "badge": null,
+      "gift": null,
+      "note": "Pro-камера и дисплей",
+      "colors": [
+        {
+          "id": "moonstone",
+          "name": "Moonstone",
+          "hex": "#9aa3ad",
+          "image": null
+        },
+        {
+          "id": "obsidian",
+          "name": "Obsidian",
+          "hex": "#1a1a1a",
+          "image": null
+        },
+        {
+          "id": "jade",
+          "name": "Jade",
+          "hex": "#5f7f6a",
+          "image": null
+        },
+        {
+          "id": "porcelain",
+          "name": "Porcelain",
+          "hex": "#ece7df",
+          "image": null
+        }
+      ],
+      "configs": [
+        {
+          "id": "256",
+          "storage": "16/256",
+          "price": 3200,
+          "in_stock": true
+        },
+        {
+          "id": "512",
+          "storage": "16/512",
+          "price": 0,
+          "in_stock": true
+        }
+      ],
+      "image": "/images/pixel-10-pro.png"
+    },
+    {
+      "id": "pixel-10-pro-xl",
+      "category": "pixel",
+      "name": "Pixel 10 Pro XL",
+      "badge": null,
+      "gift": null,
+      "note": "Максимальный Pixel",
+      "colors": [
+        {
+          "id": "moonstone",
+          "name": "Moonstone",
+          "hex": "#9aa3ad",
+          "image": null
+        },
+        {
+          "id": "obsidian",
+          "name": "Obsidian",
+          "hex": "#1a1a1a",
+          "image": null
+        },
+        {
+          "id": "jade",
+          "name": "Jade",
+          "hex": "#5f7f6a",
+          "image": null
+        },
+        {
+          "id": "porcelain",
+          "name": "Porcelain",
+          "hex": "#ece7df",
+          "image": null
+        }
+      ],
+      "configs": [
+        {
+          "id": "256",
+          "storage": "16/256",
+          "price": 3250,
+          "in_stock": true
+        },
+        {
+          "id": "512",
+          "storage": "16/512",
+          "price": 0,
+          "in_stock": true
+        }
+      ],
+      "image": "/images/pixel-10-pro-xl.png"
+    },
+    {
+      "id": "macbook-neo",
+      "category": "mac",
+      "name": "MacBook Neo 13\"",
+      "badge": "Новинка",
+      "gift": null,
+      "note": "Цена уточняется у менеджера",
+      "colors": [
+        {
+          "id": "silver",
+          "name": "Silver",
+          "hex": "#c8ccd1",
+          "image": null
+        },
+        {
+          "id": "indigo",
+          "name": "Indigo",
+          "hex": "#2c3e6b",
+          "image": null
+        },
+        {
+          "id": "pink",
+          "name": "Pink",
+          "hex": "#e8b4c4",
+          "image": null
+        },
+        {
+          "id": "citrus",
+          "name": "Citrus",
+          "hex": "#e3c35a",
+          "image": null
+        }
+      ],
+      "configs": [
+        {
+          "id": "base",
+          "storage": "базовая",
+          "price": 0,
+          "in_stock": true
+        }
+      ],
+      "image": "/images/macbook-neo.png"
+    }
+  ]
+}

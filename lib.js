@@ -45,7 +45,16 @@ const PAYMENTS = [
 const PAYMENT_TITLES = Object.fromEntries(PAYMENTS.map((p) => [p.id, p.title]));
 
 function loadCatalog() {
-  const raw = JSON.parse(fs.readFileSync(path.join(__dirname, "data", "catalog.json"), "utf8"));
+  const candidates = [
+    path.join(__dirname, "catalog", "catalog.json"),
+    path.join(__dirname, "public", "catalog.json"),
+    path.join(__dirname, "data", "catalog.json"),
+  ];
+  const file = candidates.find((p) => fs.existsSync(p));
+  if (!file) {
+    throw new Error("catalog.json not found (checked catalog/, public/, data/)");
+  }
+  const raw = JSON.parse(fs.readFileSync(file, "utf8"));
   const products = raw.products.map((p) => {
     const priced = (p.configs || []).map((c) => c.price).filter((n) => n > 0);
     const min = priced.length ? Math.min(...priced) : null;
@@ -115,7 +124,14 @@ async function startHttp(botForNotify) {
     res.json({ ok: true, role: "http", db });
   });
   app.get("/health", (_req, res) => res.json({ ok: true, role: "http" }));
-  app.get("/api/catalog", (_req, res) => res.json(loadCatalog()));
+  app.get("/api/catalog", (_req, res) => {
+    try {
+      res.json(loadCatalog());
+    } catch (err) {
+      console.error("catalog load failed", err);
+      res.status(500).json({ detail: String(err.message || err) });
+    }
+  });
 
   app.post("/api/order", async (req, res) => {
     try {
