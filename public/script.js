@@ -80,13 +80,19 @@
   }
 
   function productImage(product, colorId) {
+    let src = "";
     if (colorId) {
       const color = product.colors.find((c) => c.id === colorId);
-      if (color?.image) return color.image;
+      if (color?.image) src = color.image;
     }
-    const firstWithImage = product.colors?.find((c) => c.image);
-    if (firstWithImage?.image) return firstWithImage.image;
-    return product.image || "";
+    if (!src) {
+      const firstWithImage = product.colors?.find((c) => c.image);
+      if (firstWithImage?.image) src = firstWithImage.image;
+    }
+    if (!src) src = product.image || "";
+    if (!src) return "";
+    // bust Telegram/WebView cache after regenerating color art
+    return src.includes("?") ? src : `${src}?v=3`;
   }
 
   function setDetailImage(src, alt) {
