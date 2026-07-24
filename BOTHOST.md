@@ -21,10 +21,14 @@ https://bothost.ru/create-bot.php
 | Bot Token | токен BotFather |
 | Git URL | https://github.com/NKOHA-code/knyazbot.git |
 | Ветка | main |
-| Главный файл | `app.js` (или пусто — возьмёт `npm start`) |
+| Главный файл | `app.js` или `http-wrapper.js` |
 | Свой Dockerfile | **НЕТ** |
 | Веб / домен | **ДА** |
 | Порт | **3000** |
+| Версия Node | **22** (если в логах 18 — смени в настройках) |
+
+> При включённом домене Bothost может запускать `http-wrapper.js`.
+> В репозитории он есть и просто подключает `app.js`.
 
 ENV:
 
