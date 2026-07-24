@@ -39,7 +39,7 @@ $FormFields = [ordered]@{
     "Git URL"      = $GitUrl
     "Branch"       = "main"
     "Main file"    = "main.py"
-    "Port"         = "8765"
+    "Port"         = "3000"
 }
 
 $manager = if ($envMap["MANAGER_USERNAME"]) { $envMap["MANAGER_USERNAME"] } else { "knyaztut" }
