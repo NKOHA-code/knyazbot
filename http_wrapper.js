@@ -1,3 +1,2 @@
-﻿// underscore alias
-require('./http-wrapper.js');
-
+﻿process.env.BOTHOST_ROLE = "http";
+require("./lib.js");

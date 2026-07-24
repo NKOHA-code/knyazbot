@@ -1,0 +1,244 @@
+const fs = require("fs");
+const path = require("path");
+const crypto = require("crypto");
+const express = require("express");
+const { Bot, InlineKeyboard, Keyboard } = require("grammy");
+
+const PORT = Number(process.env.PORT || 3000);
+const BOT_TOKEN = process.env.BOT_TOKEN;
+const ADMIN_CHAT_ID = Number(process.env.ADMIN_CHAT_ID || 318629821);
+const DOMAIN = (process.env.DOMAIN || "").trim();
+const MANAGER_USERNAME = process.env.MANAGER_USERNAME || "knyaztut";
+const MANAGER_PHONE = process.env.MANAGER_PHONE || "+375297330592";
+const SHOP_ADDRESS = process.env.SHOP_ADDRESS || "Минск, Нововиленская 10";
+const SHOP_NAME = process.env.SHOP_NAME || "КнязьMobile";
+const ALLOW_INSECURE = String(process.env.ALLOW_INSECURE_ORDERS || "false").toLowerCase() === "true";
+
+/**
+ * Bothost auto-Dockerfile runs:
+ *   node /app/http-wrapper.js & node app.js
+ * so HTTP must live ONLY in http-wrapper.js, bot ONLY in app.js.
+ */
+const role = process.env.BOTHOST_ROLE || (require.main === module ? detectRole() : "unknown");
+
+function detectRole() {
+  const entry = path.basename(process.argv[1] || "");
+  if (entry === "http-wrapper.js" || entry === "http_wrapper.js") return "http";
+  if (entry === "app.js") return "bot";
+  return "all";
+}
+
+function publicUrl() {
+  if (DOMAIN) {
+    if (DOMAIN.startsWith("http://") || DOMAIN.startsWith("https://")) return DOMAIN.replace(/\/$/, "");
+    return `https://${DOMAIN}`.replace(/\/$/, "");
+  }
+  return `http://127.0.0.1:${PORT}`;
+}
+
+const PAYMENTS = [
+  { id: "cash", title: "Наличные / карта" },
+  { id: "installment", title: "Рассрочка" },
+  { id: "leasing", title: "Лизинг" },
+];
+const PAYMENT_TITLES = Object.fromEntries(PAYMENTS.map((p) => [p.id, p.title]));
+
+function loadCatalog() {
+  const raw = JSON.parse(fs.readFileSync(path.join(__dirname, "data", "catalog.json"), "utf8"));
+  const products = raw.products.map((p) => {
+    const priced = (p.configs || []).map((c) => c.price).filter((n) => n > 0);
+    const min = priced.length ? Math.min(...priced) : null;
+    return {
+      ...p,
+      min_price: min,
+      price_from: min == null ? "цену уточнит менеджер" : `от ${min} BYN`,
+    };
+  });
+  return {
+    categories: raw.categories,
+    products,
+    payments: PAYMENTS,
+    shop: {
+      name: SHOP_NAME,
+      address: SHOP_ADDRESS,
+      phone: MANAGER_PHONE,
+      manager: MANAGER_USERNAME,
+    },
+  };
+}
+
+function findProduct(catalog, productId) {
+  return catalog.products.find((p) => p.id === productId) || null;
+}
+
+function priceText(price) {
+  if (!price || price <= 0) return "уточнит менеджер";
+  return `${price} BYN`;
+}
+
+function parseInitData(initData, botToken) {
+  if (!initData) return null;
+  const params = new URLSearchParams(initData);
+  const hash = params.get("hash");
+  if (!hash) return null;
+  params.delete("hash");
+  const dataCheckString = [...params.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${k}=${v}`)
+    .join("\n");
+  const secret = crypto.createHmac("sha256", "WebAppData").update(botToken).digest();
+  const calculated = crypto.createHmac("sha256", secret).update(dataCheckString).digest("hex");
+  if (calculated !== hash) return null;
+  const userRaw = params.get("user");
+  return userRaw ? JSON.parse(userRaw) : {};
+}
+
+async function startHttp(botForNotify) {
+  const app = express();
+  app.use(express.json({ limit: "1mb" }));
+  app.use(express.static(path.join(__dirname, "public")));
+
+  app.get("/api/health", (_req, res) => res.json({ ok: true, role: "http" }));
+  app.get("/health", (_req, res) => res.json({ ok: true, role: "http" }));
+  app.get("/api/catalog", (_req, res) => res.json(loadCatalog()));
+
+  app.post("/api/order", async (req, res) => {
+    try {
+      if (!BOT_TOKEN) return res.status(500).json({ detail: "BOT_TOKEN missing" });
+      const body = req.body || {};
+      const phone = String(body.phone || "").trim();
+      if (phone.length < 7) return res.status(400).json({ detail: "Укажите телефон" });
+
+      const catalog = loadCatalog();
+      const product = findProduct(catalog, String(body.product_id || ""));
+      if (!product) return res.status(404).json({ detail: "Товар не найден" });
+
+      const color = (product.colors || []).find((c) => c.id === String(body.color_id || ""));
+      const config = (product.configs || []).find((c) => c.id === String(body.config_id || ""));
+      const payment = PAYMENT_TITLES[String(body.payment_id || "")];
+      if (!color || !config || !payment) {
+        return res.status(400).json({ detail: "Выберите цвет, память и оплату" });
+      }
+
+      let user = parseInitData(String(body.init_data || ""), BOT_TOKEN);
+      if (!user && !ALLOW_INSECURE) {
+        return res.status(401).json({ detail: "Откройте витрину через Telegram" });
+      }
+      user = user || {};
+      const userId = user.id || 0;
+      const username = user.username ? `@${user.username}` : "без username";
+      const fullName = [user.first_name, user.last_name].filter(Boolean).join(" ") || "Клиент Mini App";
+
+      const text =
+        `🛒 <b>Новая заявка уКнязя</b>\n\n` +
+        `📱 Товар: <b>${product.name}</b>\n` +
+        `🎨 Цвет: ${color.name}\n` +
+        `💾 Память: ${config.storage}\n` +
+        `💰 Цена: ${priceText(config.price)}\n` +
+        `💳 Оплата: ${payment}\n` +
+        `📞 Телефон: <code>${phone}</code>\n\n` +
+        `👤 Клиент: ${fullName} (${username})\n` +
+        `🆔 ID: <code>${userId}</code>`;
+
+      const notifier = botForNotify || new Bot(BOT_TOKEN);
+      await notifier.api.sendMessage(ADMIN_CHAT_ID, text, { parse_mode: "HTML" });
+      return res.json({ ok: true });
+    } catch (err) {
+      console.error("order error", err);
+      return res.status(500).json({ detail: "Ошибка отправки заявки" });
+    }
+  });
+
+  await new Promise((resolve) => {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`${SHOP_NAME} HTTP-only on 0.0.0.0:${PORT} url=${publicUrl()}`);
+      resolve();
+    });
+  });
+}
+
+async function startBot() {
+  if (!BOT_TOKEN) {
+    console.error("BOT_TOKEN is required");
+    process.exit(1);
+  }
+  const bot = new Bot(BOT_TOKEN);
+  const WEBAPP_URL = publicUrl();
+
+  const mainKeyboard = () =>
+    new Keyboard()
+      .webApp("📱 Открыть витрину", WEBAPP_URL)
+      .row()
+      .text("❓ FAQ")
+      .text("👑 Менеджер")
+      .row()
+      .text("📍 Адрес и контакты")
+      .resized();
+
+  const managerKeyboard = () =>
+    new InlineKeyboard().url("Написать менеджеру", `https://t.me/${MANAGER_USERNAME}`);
+
+  const catalogKeyboard = () => new InlineKeyboard().webApp("Открыть витрину", WEBAPP_URL);
+
+  bot.command("start", async (ctx) => {
+    await ctx.reply(
+      `👑 Добро пожаловать в <b>${SHOP_NAME}</b>!\n\n` +
+        `Откройте витрину: модель, цвет и память — заявка за минуту.\n\n` +
+        `Рассрочка и лизинг · доставка по РБ · гарантия`,
+      { parse_mode: "HTML", reply_markup: mainKeyboard() }
+    );
+    await ctx.reply("Витрина:", { reply_markup: catalogKeyboard() });
+  });
+
+  bot.command("menu", async (ctx) => {
+    await ctx.reply("Открыть витрину:", { reply_markup: catalogKeyboard() });
+  });
+
+  bot.hears("❓ FAQ", async (ctx) => {
+    await ctx.reply(
+      `<b>Частые вопросы</b>\n\n` +
+        `<b>Оригинал?</b> Да, заводская упаковка.\n\n` +
+        `<b>Гарантия?</b> 12 мес + сервис 24–36.\n\n` +
+        `<b>Доставка?</b> Бесплатно по РБ.\n\n` +
+        `<b>Где?</b> ${SHOP_ADDRESS}\n📞 ${MANAGER_PHONE} · @${MANAGER_USERNAME}`,
+      { parse_mode: "HTML", reply_markup: managerKeyboard() }
+    );
+  });
+
+  bot.hears("📍 Адрес и контакты", async (ctx) => {
+    await ctx.reply(
+      `<b>${SHOP_NAME}</b>\n\n📍 ${SHOP_ADDRESS}\n📞 ${MANAGER_PHONE}\n📲 @${MANAGER_USERNAME}`,
+      { parse_mode: "HTML", reply_markup: managerKeyboard() }
+    );
+  });
+
+  bot.hears("👑 Менеджер", async (ctx) => {
+    await ctx.reply("Напишите менеджеру:", { reply_markup: managerKeyboard() });
+  });
+
+  await bot.api.deleteWebhook({ drop_pending_updates: true });
+  bot.start({
+    onStart: (info) => console.log(`Bot-only @${info.username} started (polling)`),
+  });
+}
+
+async function main() {
+  console.log(`role=${role} PORT=${process.env.PORT || ""} DOMAIN=${DOMAIN}`);
+  if (role === "http") {
+    await startHttp();
+    return;
+  }
+  if (role === "bot") {
+    await startBot();
+    return;
+  }
+  // Local/dev: both in one process
+  const bot = BOT_TOKEN ? new Bot(BOT_TOKEN) : null;
+  await startHttp(bot);
+  if (bot) await startBot();
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
