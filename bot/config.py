@@ -10,7 +10,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     bot_token: str
-    admin_chat_id: int
+    # Default keeps Bothost from crashing if ENV was forgotten
+    admin_chat_id: int = 318629821
     manager_username: str = "knyaztut"
     manager_phone: str = "+375297330592"
     shop_address: str = "Минск, Нововиленская 10"
@@ -30,13 +31,14 @@ class Settings(BaseSettings):
 
     @cached_property
     def public_webapp_url(self) -> str:
-        if self.webapp_url.strip():
-            return self.webapp_url.strip().rstrip("/")
+        # Prefer Bothost DOMAIN so stale local tunnels in WEBAPP_URL don't break Mini App
         if self.domain:
             domain = self.domain.strip()
             if domain.startswith("http://") or domain.startswith("https://"):
                 return domain.rstrip("/")
             return f"https://{domain}".rstrip("/")
+        if self.webapp_url.strip():
+            return self.webapp_url.strip().rstrip("/")
         return f"http://127.0.0.1:{self.listen_port}"
 
 
