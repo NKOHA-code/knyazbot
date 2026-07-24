@@ -44,6 +44,17 @@ const PAYMENTS = [
 ];
 const PAYMENT_TITLES = Object.fromEntries(PAYMENTS.map((p) => [p.id, p.title]));
 
+function readJsonFile(file) {
+  let buf = fs.readFileSync(file);
+  // Strip UTF-8 BOM bytes (EF BB BF) before decode — Windows editors often add it
+  if (buf.length >= 3 && buf[0] === 0xef && buf[1] === 0xbb && buf[2] === 0xbf) {
+    buf = buf.subarray(3);
+  }
+  let text = buf.toString("utf8");
+  text = text.replace(/^[\uFEFF\u200B\u200C\u200D\u2060]+/, "").trim();
+  return JSON.parse(text);
+}
+
 function loadCatalog() {
   const candidates = [
     path.join(__dirname, "catalog", "catalog.json"),
@@ -54,9 +65,8 @@ function loadCatalog() {
   if (!file) {
     throw new Error("catalog.json not found (checked catalog/, public/, data/)");
   }
-  // Strip UTF-8 BOM (EF BB BF) — Windows editors often write it
-  const text = fs.readFileSync(file, "utf8").replace(/^\uFEFF/, "");
-  const raw = JSON.parse(text);
+  console.log("catalog file:", file);
+  const raw = readJsonFile(file);
   const products = raw.products.map((p) => {
     const priced = (p.configs || []).map((c) => c.price).filter((n) => n > 0);
     const min = priced.length ? Math.min(...priced) : null;
@@ -106,7 +116,14 @@ function parseInitData(initData, botToken) {
 }
 
 async function startHttp(botForNotify) {
+  console.log("КнязьMobile build=2026-07-24c (bom-safe catalog)");
   await initDb();
+  try {
+    const cat = loadCatalog();
+    console.log("catalog OK products=", cat.products.length);
+  } catch (err) {
+    console.error("catalog preload failed", err.message);
+  }
   const app = express();
   app.use(express.json({ limit: "1mb" }));
   app.use(express.static(path.join(__dirname, "public")));
