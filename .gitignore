@@ -1,5 +1,6 @@
 .env
 .venv/
+node_modules/
 __pycache__/
 *.pyc
 .pytest_cache/
@@ -7,3 +8,6 @@ __pycache__/
 .vscode/
 tools/
 bot/webapp/
+bothost-values.txt
+Dockerfile
+Dockerfile.custom.bak

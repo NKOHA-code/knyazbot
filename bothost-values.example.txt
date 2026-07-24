@@ -1,0 +1,25 @@
+# Bothost — шпаргалка (значения подставит bothost-fill.ps1 из .env)
+# Запуск скрипта:
+#   powershell -ExecutionPolicy Bypass -File .\bothost-fill.ps1
+#
+# Страница: https://bothost.ru/create-bot.php
+#
+# Форма:
+#   Название          = КнязьMobile
+#   Платформа         = Telegram
+#   Библиотека        = aiogram
+#   Bot Token         = из .env (BOT_TOKEN)
+#   Git URL           = https://github.com/NKOHA-code/knyazbot.git
+#   Ветка             = main
+#   Главный файл      = main.py
+#   Порт              = 8765
+#   Dockerfile        = ДА
+#   Веб / домен       = ДА  (обязательно для Mini App)
+#
+# ENV:
+#   ADMIN_CHAT_ID=...
+#   MANAGER_USERNAME=knyaztut
+#   MANAGER_PHONE=+375297330592
+#   SHOP_ADDRESS=Минск, Нововиленская 10
+#   SHOP_NAME=КнязьMobile
+#   ALLOW_INSECURE_ORDERS=false

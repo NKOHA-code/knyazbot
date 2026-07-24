@@ -1,0 +1,16 @@
+{
+  "name": "knyazbot",
+  "version": "1.0.0",
+  "description": "KnyazMobile Telegram bot + Mini App for Bothost",
+  "main": "app.js",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "grammy": "^1.35.0"
+  }
+}
