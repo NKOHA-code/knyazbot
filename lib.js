@@ -3,6 +3,7 @@ const path = require("path");
 const crypto = require("crypto");
 const express = require("express");
 const { Bot, InlineKeyboard, Keyboard } = require("grammy");
+const { initDb, saveOrder } = require("./db");
 
 const PORT = Number(process.env.PORT || 3000);
 const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -94,11 +95,25 @@ function parseInitData(initData, botToken) {
 }
 
 async function startHttp(botForNotify) {
+  await initDb();
   const app = express();
   app.use(express.json({ limit: "1mb" }));
   app.use(express.static(path.join(__dirname, "public")));
 
-  app.get("/api/health", (_req, res) => res.json({ ok: true, role: "http" }));
+  app.get("/api/health", async (_req, res) => {
+    let db = false;
+    try {
+      const { getPool } = require("./db");
+      const pool = getPool();
+      if (pool) {
+        await pool.query("SELECT 1");
+        db = true;
+      }
+    } catch (_) {
+      db = false;
+    }
+    res.json({ ok: true, role: "http", db });
+  });
   app.get("/health", (_req, res) => res.json({ ok: true, role: "http" }));
   app.get("/api/catalog", (_req, res) => res.json(loadCatalog()));
 
@@ -115,7 +130,8 @@ async function startHttp(botForNotify) {
 
       const color = (product.colors || []).find((c) => c.id === String(body.color_id || ""));
       const config = (product.configs || []).find((c) => c.id === String(body.config_id || ""));
-      const payment = PAYMENT_TITLES[String(body.payment_id || "")];
+      const paymentId = String(body.payment_id || "");
+      const payment = PAYMENT_TITLES[paymentId];
       if (!color || !config || !payment) {
         return res.status(400).json({ detail: "Выберите цвет, память и оплату" });
       }
@@ -126,23 +142,45 @@ async function startHttp(botForNotify) {
       }
       user = user || {};
       const userId = user.id || 0;
-      const username = user.username ? `@${user.username}` : "без username";
+      const username = user.username || null;
       const fullName = [user.first_name, user.last_name].filter(Boolean).join(" ") || "Клиент Mini App";
 
+      let orderId = null;
+      try {
+        const saved = await saveOrder({
+          product_id: product.id,
+          product_name: product.name,
+          color_id: color.id,
+          color_name: color.name,
+          config_id: config.id,
+          storage: config.storage,
+          price: config.price || 0,
+          payment_id: paymentId,
+          payment_title: payment,
+          phone,
+          telegram_user_id: userId || null,
+          telegram_username: username,
+          telegram_full_name: fullName,
+        });
+        orderId = saved?.id || null;
+      } catch (dbErr) {
+        console.error("saveOrder failed", dbErr);
+      }
+
       const text =
-        `🛒 <b>Новая заявка уКнязя</b>\n\n` +
+        `🛒 <b>Новая заявка уКнязя</b>${orderId ? ` #${orderId}` : ""}\n\n` +
         `📱 Товар: <b>${product.name}</b>\n` +
         `🎨 Цвет: ${color.name}\n` +
         `💾 Память: ${config.storage}\n` +
         `💰 Цена: ${priceText(config.price)}\n` +
         `💳 Оплата: ${payment}\n` +
         `📞 Телефон: <code>${phone}</code>\n\n` +
-        `👤 Клиент: ${fullName} (${username})\n` +
+        `👤 Клиент: ${fullName} (${username ? "@" + username : "без username"})\n` +
         `🆔 ID: <code>${userId}</code>`;
 
       const notifier = botForNotify || new Bot(BOT_TOKEN);
       await notifier.api.sendMessage(ADMIN_CHAT_ID, text, { parse_mode: "HTML" });
-      return res.json({ ok: true });
+      return res.json({ ok: true, order_id: orderId });
     } catch (err) {
       console.error("order error", err);
       return res.status(500).json({ detail: "Ошибка отправки заявки" });

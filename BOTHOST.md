@@ -39,7 +39,10 @@ MANAGER_PHONE=+375297330592
 SHOP_ADDRESS=Минск, Нововиленская 10
 SHOP_NAME=КнязьMobile
 ALLOW_INSECURE_ORDERS=false
+DATABASE_URL=postgresql://...
 ```
+
+`DATABASE_URL` — строка из Bothost Postgres. Заявки пишутся в таблицу `orders` + дублируются админу в Telegram.
 
 После деплоя: `https://<домен>/api/health` → `{"ok":true}`  
 BotFather → Domain = хост без `https://` → `/start` у бота.
