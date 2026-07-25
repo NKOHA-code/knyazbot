@@ -250,6 +250,17 @@
             </div>
           </div>
           <div class="side-card">
+            <div class="p-section-title">Excel</div>
+            <div class="meta" style="margin-bottom:10px">Скачай шаблон, заполни строки (цвет + память), затем импортируй .xlsx</div>
+            <div class="side-fields">
+              <a class="btn" id="xlsx-template" href="#" style="text-align:center;justify-content:center">Скачать шаблон</a>
+              <label class="file-btn" style="display:block;margin:0">
+                Импорт Excel
+                <input type="file" id="xlsx-import" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden />
+              </label>
+            </div>
+          </div>
+          <div class="side-card">
             <div class="p-section-title">Новый товар</div>
             <div class="side-fields">
               <div class="field">
@@ -682,6 +693,25 @@
     }
 
     $("panel-catalog").addEventListener("click", async (e) => {
+      if (e.target.id === "xlsx-template" || e.target.closest("#xlsx-template")) {
+        e.preventDefault();
+        try {
+          const res = await fetch(basePath() + "/api/catalog/template.xlsx", { credentials: "same-origin" });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.detail || "Не удалось скачать шаблон");
+          }
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "knyaz-catalog-template.xlsx";
+          a.click();
+          URL.revokeObjectURL(url);
+          toast("Шаблон скачан");
+        } catch (ex) { toast(ex.message); }
+        return;
+      }
       const filterBtn = e.target.closest("[data-filter-cat]");
       if (filterBtn && !e.target.closest("[data-del-cat]")) {
         state.catFilter = filterBtn.dataset.filterCat || "all";
@@ -790,6 +820,25 @@
     });
 
     $("panel-catalog").addEventListener("change", async (e) => {
+      if (e.target.id === "xlsx-import" && e.target.files?.[0]) {
+        const file = e.target.files[0];
+        e.target.value = "";
+        try {
+          const dataUrl = await new Promise((resolve, reject) => {
+            const r = new FileReader();
+            r.onload = () => resolve(r.result);
+            r.onerror = reject;
+            r.readAsDataURL(file);
+          });
+          const result = await api("/api/catalog/import", {
+            method: "POST",
+            body: JSON.stringify({ data: dataUrl, filename: file.name }),
+          });
+          toast(`Импорт: +${result.created}, обновлено ${result.updated}`);
+          loadCatalog();
+        } catch (ex) { toast(ex.message); }
+        return;
+      }
       const fileInput = e.target.closest("[data-upload]");
       const hex = e.target.closest("[data-hex]");
       try {

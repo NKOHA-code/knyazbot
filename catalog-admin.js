@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const XLSX = require("xlsx");
 
 const CATALOG_CANDIDATES = [
   path.join(__dirname, "catalog", "catalog.json"),
@@ -184,6 +185,252 @@ function isAllowedAdminId(telegramId) {
   return loadManagers().some((m) => Number(m.telegram_id) === id);
 }
 
+const IMPORT_HEADERS = [
+  "id",
+  "name",
+  "category",
+  "category_title",
+  "badge",
+  "gift",
+  "note",
+  "color_id",
+  "color_name",
+  "color_hex",
+  "storage",
+  "price",
+  "in_stock",
+];
+
+function cell(row, ...keys) {
+  for (const k of keys) {
+    if (row[k] !== undefined && row[k] !== null && String(row[k]).trim() !== "") {
+      return String(row[k]).trim();
+    }
+  }
+  return "";
+}
+
+function parseStock(v) {
+  const s = String(v ?? "").trim().toLowerCase();
+  if (!s) return true;
+  return !["0", "false", "нет", "no", "n", "out", "-" ].includes(s);
+}
+
+function storageToConfigId(storage) {
+  const m = String(storage || "").match(/(\d+)/);
+  return m ? m[1] : slugifyId(storage) || "cfg";
+}
+
+function buildCatalogTemplateBuffer() {
+  const example = [
+    {
+      id: "iphone-17",
+      name: "iPhone 17",
+      category: "iphone",
+      category_title: "iPhone",
+      badge: "Хит",
+      gift: "чехол + защитное стекло",
+      note: "Новый оригинал, заводская упаковка",
+      color_id: "black",
+      color_name: "Black",
+      color_hex: "#1c1c1e",
+      storage: "256GB",
+      price: 2150,
+      in_stock: "да",
+    },
+    {
+      id: "iphone-17",
+      name: "iPhone 17",
+      category: "iphone",
+      category_title: "iPhone",
+      badge: "Хит",
+      gift: "чехол + защитное стекло",
+      note: "Новый оригинал, заводская упаковка",
+      color_id: "black",
+      color_name: "Black",
+      color_hex: "#1c1c1e",
+      storage: "512GB",
+      price: 2490,
+      in_stock: "да",
+    },
+    {
+      id: "iphone-17",
+      name: "iPhone 17",
+      category: "iphone",
+      category_title: "iPhone",
+      badge: "Хит",
+      gift: "чехол + защитное стекло",
+      note: "Новый оригинал, заводская упаковка",
+      color_id: "white",
+      color_name: "White",
+      color_hex: "#f2f2f7",
+      storage: "256GB",
+      price: 2150,
+      in_stock: "да",
+    },
+  ];
+  const help = [
+    {
+      id: "← id товара (латиница)",
+      name: "Название на витрине",
+      category: "id категории",
+      category_title: "если категории нет — создастся",
+      badge: "Хит / Новинка / пусто",
+      gift: "подзаголовок",
+      note: "заметка",
+      color_id: "black",
+      color_name: "Black",
+      color_hex: "#1c1c1e",
+      storage: "256GB",
+      price: 0,
+      in_stock: "да / нет",
+    },
+  ];
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet([...example, ...help], { header: IMPORT_HEADERS });
+  ws["!cols"] = IMPORT_HEADERS.map((h) => ({ wch: Math.max(12, h.length + 2) }));
+  XLSX.utils.book_append_sheet(wb, ws, "catalog");
+  const noteRows = [
+    ["Как заполнять"],
+    ["1. Одна строка = одна комбинация цвет + память."],
+    ["2. Один и тот же id товара повторяй в нескольких строках для цветов и конфигов."],
+    ["3. category — латиницей (iphone). category_title — название на русском/как на витрине."],
+    ["4. in_stock: да / нет (или 1 / 0)."],
+    ["5. Фото после импорта загрузи в карточке товара (цвета сохранят старые фото, если id цвета совпал)."],
+    ["6. Строку-подсказку внизу шаблона перед импортом можно удалить."],
+  ];
+  const wsHelp = XLSX.utils.aoa_to_sheet(noteRows);
+  wsHelp["!cols"] = [{ wch: 90 }];
+  XLSX.utils.book_append_sheet(wb, wsHelp, "инструкция");
+  return XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+}
+
+function importCatalogFromExcel(buffer) {
+  const wb = XLSX.read(buffer, { type: "buffer" });
+  const sheetName = wb.SheetNames.find((n) => String(n).toLowerCase() === "catalog") || wb.SheetNames[0];
+  if (!sheetName) throw new Error("В файле нет листа");
+  const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: "" });
+  if (!rows.length) throw new Error("Пустой файл — нет строк данных");
+
+  const { data } = loadRawCatalog();
+  if (!data.categories) data.categories = [];
+  if (!data.products) data.products = [];
+
+  const productsMap = new Map();
+  let skipped = 0;
+
+  for (const row of rows) {
+    const id = slugifyId(cell(row, "id", "product_id", "ID"));
+    const name = cell(row, "name", "название", "Name");
+    if (!id || !name) {
+      skipped += 1;
+      continue;
+    }
+    if (id.startsWith("←") || name.toLowerCase().includes("название на витрине")) {
+      skipped += 1;
+      continue;
+    }
+
+    let category = slugifyId(cell(row, "category", "категория"));
+    const categoryTitle = cell(row, "category_title", "category_name", "категория_название") || category;
+    if (!category && categoryTitle) category = slugifyId(categoryTitle);
+    if (!category) throw new Error(`У товара ${id} не указана категория`);
+
+    if (!data.categories.some((c) => c.id === category)) {
+      data.categories.push({
+        id: category,
+        title: categoryTitle || category,
+        emoji: "✦",
+      });
+    }
+
+    if (!productsMap.has(id)) {
+      const existing = data.products.find((p) => p.id === id);
+      productsMap.set(id, {
+        id,
+        category,
+        name,
+        badge: cell(row, "badge", "бейдж") || null,
+        gift: cell(row, "gift", "подарок") || null,
+        note: cell(row, "note", "заметка") || null,
+        colors: existing ? [...(existing.colors || [])] : [],
+        configs: existing ? [...(existing.configs || [])] : [],
+        image: existing?.image || null,
+      });
+    }
+
+    const product = productsMap.get(id);
+    product.name = name;
+    product.category = category;
+    const badge = cell(row, "badge", "бейдж");
+    const gift = cell(row, "gift", "подарок");
+    const note = cell(row, "note", "заметка");
+    if (badge !== "") product.badge = badge || null;
+    if (gift !== "") product.gift = gift || null;
+    if (note !== "") product.note = note || null;
+
+    const colorName = cell(row, "color_name", "цвет", "color");
+    const colorId = slugifyId(cell(row, "color_id", "цвет_id") || colorName) || "default";
+    const colorHex = cell(row, "color_hex", "hex") || "#888888";
+    if (colorName || cell(row, "color_id")) {
+      const cIdx = product.colors.findIndex((c) => c.id === colorId);
+      const prev = cIdx >= 0 ? product.colors[cIdx] : null;
+      const colorRow = {
+        id: colorId,
+        name: colorName || prev?.name || colorId,
+        hex: colorHex || prev?.hex || "#888888",
+        image: prev?.image || null,
+      };
+      if (cIdx >= 0) product.colors[cIdx] = colorRow;
+      else product.colors.push(colorRow);
+    }
+
+    const storage = cell(row, "storage", "память", "config");
+    if (storage) {
+      const cfgId = storageToConfigId(storage);
+      const price = Number(cell(row, "price", "цена")) || 0;
+      const inStock = parseStock(cell(row, "in_stock", "наличие", "stock"));
+      const cfgIdx = product.configs.findIndex((c) => c.id === cfgId || c.storage === storage);
+      const cfgRow = { id: cfgId, storage, price, in_stock: inStock };
+      if (cfgIdx >= 0) product.configs[cfgIdx] = cfgRow;
+      else product.configs.push(cfgRow);
+    }
+  }
+
+  if (!productsMap.size) throw new Error("Не найдено ни одной валидной строки товара");
+
+  let created = 0;
+  let updated = 0;
+  for (const product of productsMap.values()) {
+    if (!product.colors.length) {
+      product.colors = [{ id: "default", name: "Default", hex: "#888888", image: null }];
+    }
+    if (!product.configs.length) {
+      product.configs = [{ id: "256", storage: "256GB", price: 0, in_stock: true }];
+    }
+    if (!product.image) product.image = product.colors.find((c) => c.image)?.image || null;
+
+    const idx = data.products.findIndex((p) => p.id === product.id);
+    if (idx >= 0) {
+      data.products[idx] = product;
+      updated += 1;
+    } else {
+      data.products.push(product);
+      created += 1;
+    }
+  }
+
+  saveCatalog(data);
+  return {
+    ok: true,
+    created,
+    updated,
+    skipped,
+    products: productsMap.size,
+    categories: data.categories.length,
+  };
+}
+
 module.exports = {
   getCatalog,
   saveCatalog,
@@ -194,6 +441,8 @@ module.exports = {
   patchConfig,
   patchColor,
   saveUploadedImage,
+  buildCatalogTemplateBuffer,
+  importCatalogFromExcel,
   loadManagers,
   saveManagers,
   isAllowedAdminId,

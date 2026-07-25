@@ -435,6 +435,34 @@ function mountAdmin(app) {
     }
   });
 
+  app.get("/a/:path/api/catalog/template.xlsx", gatePath, requireAuth, (_req, res) => {
+    try {
+      const buf = catalogAdmin.buildCatalogTemplateBuffer();
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      res.setHeader("Content-Disposition", 'attachment; filename="knyaz-catalog-template.xlsx"');
+      res.send(buf);
+    } catch (err) {
+      res.status(500).json({ detail: err.message || "Ошибка шаблона" });
+    }
+  });
+
+  app.post("/a/:path/api/catalog/import", gatePath, requireAuth, (req, res) => {
+    try {
+      const raw = String((req.body && req.body.data) || "");
+      const b64 = raw.replace(/^data:[^;]+;base64,/, "");
+      if (!b64 || b64.length < 32) return res.status(400).json({ detail: "Нет файла Excel" });
+      const buf = Buffer.from(b64, "base64");
+      if (buf.length > 8 * 1024 * 1024) return res.status(400).json({ detail: "Макс. 8 МБ" });
+      const result = catalogAdmin.importCatalogFromExcel(buf);
+      res.json(result);
+    } catch (err) {
+      res.status(400).json({ detail: err.message || "Ошибка импорта" });
+    }
+  });
+
   // —— FAQ ——
   app.get("/a/:path/api/faq", gatePath, requireAuth, async (_req, res) => {
     try {
