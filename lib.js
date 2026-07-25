@@ -6,6 +6,7 @@ const { Bot, InlineKeyboard, Keyboard } = require("grammy");
 const { initDb, saveOrder } = require("./db");
 const { mountAdmin } = require("./admin-panel");
 const { buildAdminOrderNotify, adminPanelBaseUrl } = require("./admin-order-notify");
+const catalogAdmin = require("./catalog-admin");
 
 const PORT = Number(process.env.PORT || 3000);
 const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -70,7 +71,9 @@ function loadCatalog() {
   }
   console.log("catalog file:", file);
   const raw = readJsonFile(file);
-  const products = raw.products.map((p) => {
+  const products = raw.products
+    .filter((p) => !p.hidden)
+    .map((p) => {
     const priced = (p.configs || []).map((c) => c.price).filter((n) => n > 0);
     const min = priced.length ? Math.min(...priced) : null;
     return {
@@ -78,7 +81,8 @@ function loadCatalog() {
       min_price: min,
       price_from: min == null ? "цену уточнит менеджер" : `от ${min} BYN`,
     };
-  });
+  })
+    .sort((a, b) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0));
   return {
     categories: raw.categories,
     products,
@@ -227,11 +231,22 @@ async function startHttp(botForNotify) {
       );
 
       const notifier = botForNotify || new Bot(BOT_TOKEN);
-      await notifier.api.sendMessage(ADMIN_CHAT_ID, notify.text, {
-        parse_mode: "HTML",
-        reply_markup: notify.reply_markup,
-        disable_web_page_preview: true,
-      });
+      const chatIds = new Set([ADMIN_CHAT_ID].filter(Boolean));
+      for (const m of catalogAdmin.loadManagers()) {
+        const id = Number(m.telegram_id);
+        if (Number.isFinite(id) && id > 0) chatIds.add(id);
+      }
+      for (const chatId of chatIds) {
+        try {
+          await notifier.api.sendMessage(chatId, notify.text, {
+            parse_mode: "HTML",
+            reply_markup: notify.reply_markup,
+            disable_web_page_preview: true,
+          });
+        } catch (notifyErr) {
+          console.error("notify manager", chatId, notifyErr.message);
+        }
+      }
       return res.json({ ok: true, order_id: orderId });
     } catch (err) {
       console.error("order error", err);

@@ -7,6 +7,8 @@ const crypto = require("crypto");
 const {
   listOrders,
   updateOrder,
+  deleteOrder,
+  listOrderEvents,
   ORDER_STATUSES,
   getPool,
   getOrderStats,
@@ -16,6 +18,7 @@ const {
   ordersToCsv,
 } = require("./db");
 const catalogAdmin = require("./catalog-admin");
+const { checkAdminPassword, setAdminPassword, logAction, listActions } = require("./admin-auth");
 
 const ADMIN_PATH = (process.env.ADMIN_PATH || "").trim().replace(/^\/+|\/+$/g, "");
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
@@ -171,17 +174,36 @@ function parseInitData(initData, botToken) {
   return userRaw ? JSON.parse(userRaw) : null;
 }
 
-async function notifyTelegram(text) {
-  if (!BOT_TOKEN || !ADMIN_CHAT_ID) return;
-  try {
-    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: ADMIN_CHAT_ID, text, parse_mode: "HTML" }),
-    });
-  } catch (err) {
-    console.error("admin notifyTelegram", err.message);
+async function notifyTelegram(text, chatIds) {
+  if (!BOT_TOKEN) return;
+  const ids = Array.isArray(chatIds) && chatIds.length
+    ? chatIds
+    : [ADMIN_CHAT_ID].filter(Boolean);
+  const unique = [...new Set(ids.map(Number).filter((n) => Number.isFinite(n) && n > 0))];
+  for (const chat_id of unique) {
+    try {
+      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id, text, parse_mode: "HTML" }),
+      });
+    } catch (err) {
+      console.error("admin notifyTelegram", chat_id, err.message);
+    }
   }
+}
+
+function allManagerChatIds() {
+  const ids = new Set([ADMIN_CHAT_ID].filter(Boolean));
+  for (const m of catalogAdmin.loadManagers()) {
+    const id = Number(m.telegram_id);
+    if (Number.isFinite(id) && id > 0) ids.add(id);
+  }
+  return [...ids];
+}
+
+function actorName(req) {
+  return req.adminSession?.name || "админ";
 }
 
 function mountAdmin(app) {
@@ -219,7 +241,7 @@ function mountAdmin(app) {
       return res.status(429).json({ detail: "Слишком много попыток. Подождите минуту." });
     }
     const password = String((req.body && req.body.password) || "");
-    if (!timingSafeEqualStr(password, ADMIN_PASSWORD)) {
+    if (!checkAdminPassword(password, ADMIN_PASSWORD)) {
       return res.status(401).json({ detail: "Неверный пароль" });
     }
     setSessionCookie(res, makeSessionCookie({ mid: ADMIN_CHAT_ID || null, name: "Админ" }));
@@ -325,13 +347,28 @@ function mountAdmin(app) {
         patch.assigned_name = req.adminSession.name || "Менеджер";
         if (!patch.status) patch.status = "in_progress";
       }
-      const row = await updateOrder(id, patch);
+      const row = await updateOrder(id, patch, { actor: actorName(req) });
       if (!row) return res.status(404).json({ detail: "Заявка не найдена" });
+      logAction({
+        actor: actorName(req),
+        action: "order.update",
+        detail: `#${id}`,
+        meta: patch,
+      });
       if (patch.status) {
         await notifyTelegram(
           `📋 Заявка <b>#${row.id}</b> → <b>${row.status}</b>\n` +
             `${row.product_name || ""} · ${row.phone || ""}\n` +
-            `Кто: ${req.adminSession.name || "админ"}`
+            `Кто: ${actorName(req)}`,
+          allManagerChatIds()
+        );
+      }
+      if (patch.assigned_to) {
+        await notifyTelegram(
+          `👤 Вам назначили заявку <b>#${row.id}</b>\n` +
+            `${row.product_name || ""} · ${row.phone || ""}\n` +
+            `Кто: ${actorName(req)}`,
+          [Number(patch.assigned_to)]
         );
       }
       res.json({ ok: true, order: row });
@@ -341,10 +378,34 @@ function mountAdmin(app) {
     }
   });
 
-  // —— Stats ——
-  app.get("/a/:path/api/stats", gatePath, requireAuth, async (_req, res) => {
+  app.delete("/a/:path/api/orders/:id", gatePath, requireAuth, async (req, res) => {
     try {
-      res.json(await getOrderStats());
+      if (!getPool()) return res.status(503).json({ detail: "БД не подключена" });
+      const id = Number(req.params.id);
+      if (!Number.isFinite(id) || id <= 0) return res.status(400).json({ detail: "Некорректный id" });
+      const ok = await deleteOrder(id);
+      if (!ok) return res.status(404).json({ detail: "Не найдена" });
+      logAction({ actor: actorName(req), action: "order.delete", detail: `#${id}` });
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ detail: err.message });
+    }
+  });
+
+  app.get("/a/:path/api/orders/:id/events", gatePath, requireAuth, async (req, res) => {
+    try {
+      if (!getPool()) return res.status(503).json({ detail: "БД не подключена" });
+      const id = Number(req.params.id);
+      res.json({ items: await listOrderEvents(id) });
+    } catch (err) {
+      res.status(500).json({ detail: err.message });
+    }
+  });
+
+  // —— Stats ——
+  app.get("/a/:path/api/stats", gatePath, requireAuth, async (req, res) => {
+    try {
+      res.json(await getOrderStats(String(req.query.period || "").trim() || undefined));
     } catch (err) {
       res.status(500).json({ detail: "Ошибка статистики" });
     }
@@ -362,9 +423,72 @@ function mountAdmin(app) {
   app.put("/a/:path/api/catalog/product", gatePath, requireAuth, (req, res) => {
     try {
       const product = catalogAdmin.upsertProduct(req.body || {});
+      logAction({ actor: actorName(req), action: "catalog.upsert", detail: product.id });
       res.json({ ok: true, product });
     } catch (err) {
       res.status(400).json({ detail: err.message || "Ошибка" });
+    }
+  });
+
+  app.post("/a/:path/api/catalog/product/:id/duplicate", gatePath, requireAuth, (req, res) => {
+    try {
+      const product = catalogAdmin.duplicateProduct(req.params.id);
+      logAction({ actor: actorName(req), action: "catalog.duplicate", detail: `${req.params.id} → ${product.id}` });
+      res.json({ ok: true, product });
+    } catch (err) {
+      res.status(400).json({ detail: err.message });
+    }
+  });
+
+  app.patch("/a/:path/api/catalog/product/:id/hidden", gatePath, requireAuth, (req, res) => {
+    try {
+      const product = catalogAdmin.setProductHidden(req.params.id, Boolean(req.body?.hidden));
+      logAction({
+        actor: actorName(req),
+        action: "catalog.hidden",
+        detail: `${req.params.id}=${product.hidden}`,
+      });
+      res.json({ ok: true, product });
+    } catch (err) {
+      res.status(400).json({ detail: err.message });
+    }
+  });
+
+  app.post("/a/:path/api/catalog/product/:id/move", gatePath, requireAuth, (req, res) => {
+    try {
+      const dir = String(req.body?.direction || "") === "up" ? "up" : "down";
+      const product = catalogAdmin.moveProduct(req.params.id, dir);
+      res.json({ ok: true, product });
+    } catch (err) {
+      res.status(400).json({ detail: err.message });
+    }
+  });
+
+  app.post("/a/:path/api/catalog/bulk-prices", gatePath, requireAuth, (req, res) => {
+    try {
+      const result = catalogAdmin.bulkAdjustPrices(req.body || {});
+      logAction({
+        actor: actorName(req),
+        action: "catalog.bulk_prices",
+        detail: JSON.stringify(req.body || {}),
+      });
+      res.json(result);
+    } catch (err) {
+      res.status(400).json({ detail: err.message });
+    }
+  });
+
+  app.get("/a/:path/api/catalog/export.xlsx", gatePath, requireAuth, (_req, res) => {
+    try {
+      const buf = catalogAdmin.buildCatalogExportBuffer();
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      res.setHeader("Content-Disposition", 'attachment; filename="knyaz-catalog-export.xlsx"');
+      res.send(buf);
+    } catch (err) {
+      res.status(500).json({ detail: err.message || "Ошибка экспорта" });
     }
   });
 
@@ -563,10 +687,30 @@ function mountAdmin(app) {
         }))
         .filter((m) => Number.isFinite(m.telegram_id) && m.telegram_id > 0);
       catalogAdmin.saveManagers(cleaned);
+      logAction({ actor: actorName(req), action: "managers.save", detail: `${cleaned.length}` });
       res.json({ ok: true, items: cleaned });
     } catch (err) {
       res.status(400).json({ detail: err.message });
     }
+  });
+
+  app.post("/a/:path/api/password", gatePath, requireAuth, (req, res) => {
+    try {
+      const current = String(req.body?.current || "");
+      const next = String(req.body?.next || "");
+      if (!checkAdminPassword(current, ADMIN_PASSWORD)) {
+        return res.status(401).json({ detail: "Текущий пароль неверный" });
+      }
+      setAdminPassword(next);
+      logAction({ actor: actorName(req), action: "password.change", detail: "ok" });
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(400).json({ detail: err.message });
+    }
+  });
+
+  app.get("/a/:path/api/actions", gatePath, requireAuth, (req, res) => {
+    res.json({ items: listActions(Number(req.query.limit || 80)) });
   });
 
   console.log(`Admin panel enabled at /a/${ADMIN_PATH}/ (do not share this URL)`);

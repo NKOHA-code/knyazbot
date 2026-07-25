@@ -222,6 +222,17 @@
     }
     .modal-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:8px}
     .modal-top h3{margin:0;font-size:1.15rem}
+    .badge.archived{background:rgba(255,255,255,.08);color:var(--muted)}
+    .tile-actions{display:flex;gap:4px;padding:0 10px 10px;flex-wrap:wrap}
+    .tile-actions button{font-size:.72rem;padding:5px 8px}
+    .prod-tile.hidden-prod{opacity:.55}
+    .hist{margin-top:10px;padding:10px;border-radius:12px;background:#14120f;border:1px solid var(--line);font-size:.8rem;color:var(--muted)}
+    .hist div{margin:4px 0}
+    .nav-toggle{display:none}
+    @media(max-width:859px){
+      .nav-toggle{display:inline-flex;margin-bottom:8px}
+      .nav.collapsed .tabs{display:none}
+    }
      </style>
 </head>
 <body>
@@ -237,6 +248,7 @@
         <button type="button" class="tab" data-tab="stats">Статистика</button>
         <button type="button" class="tab" data-tab="faq">Шаблоны</button>
         <button type="button" class="tab" data-tab="managers">Менеджеры</button>
+        <button type="button" class="tab" data-tab="settings">Настройки</button>
       </nav>
       <div class="nav-foot">
         <button type="button" class="ghost" id="logout" style="width:100%">Выйти</button>
@@ -289,10 +301,33 @@
             <div class="meta" style="margin-bottom:10px">Скачай шаблон, заполни строки (цвет + память), затем импортируй .xlsx</div>
             <div class="side-fields">
               <a class="btn" id="xlsx-template" href="#" style="text-align:center;justify-content:center">Скачать шаблон</a>
+              <a class="btn" id="xlsx-export" href="#" style="text-align:center;justify-content:center">Экспорт каталога</a>
               <label class="file-btn" style="display:block;margin:0">
                 Импорт Excel
                 <input type="file" id="xlsx-import" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden />
               </label>
+            </div>
+          </div>
+          <div class="side-card">
+            <div class="p-section-title">Массовые цены</div>
+            <div class="side-fields">
+              <div class="field">
+                <label>Режим</label>
+                <select id="bulk-mode">
+                  <option value="percent">± %</option>
+                  <option value="add">± BYN</option>
+                  <option value="set">Задать цену</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Значение</label>
+                <input id="bulk-value" type="number" value="0" />
+              </div>
+              <div class="field">
+                <label>Категория (опц.)</label>
+                <select id="bulk-cat"><option value="">Все</option></select>
+              </div>
+              <button type="button" class="primary" id="bulk-prices" style="width:100%">Применить</button>
             </div>
           </div>
           <div class="side-card">
@@ -331,8 +366,21 @@
     </section>
 
     <section class="panel" id="panel-stats">
+      <div class="toolbar">
+        <select id="stats-period">
+          <option value="">Всё время</option>
+          <option value="today">Сегодня</option>
+          <option value="week">7 дней</option>
+          <option value="month">30 дней</option>
+        </select>
+        <button type="button" class="primary" id="stats-refresh">Обновить</button>
+      </div>
       <div class="stats" id="stats-cards"></div>
-      <div class="card"><h2 style="margin:0 0 8px;font-size:1rem">Топ моделей</h2><div id="stats-top" class="muted">—</div></div>
+      <div class="list" style="margin-top:12px">
+        <div class="card"><h2 style="margin:0 0 8px;font-size:1rem">Топ моделей</h2><div id="stats-top" class="muted">—</div></div>
+        <div class="card"><h2 style="margin:0 0 8px;font-size:1rem">Топ цветов / памяти</h2><div id="stats-extra" class="muted">—</div></div>
+        <div class="card"><h2 style="margin:0 0 8px;font-size:1rem">Повторные клиенты</h2><div id="stats-repeats" class="muted">—</div></div>
+      </div>
     </section>
 
     <section class="panel" id="panel-faq">
@@ -343,11 +391,30 @@
     </section>
 
     <section class="panel" id="panel-managers">
-      <p class="muted">Telegram ID из @userinfobot. Эти люди могут входить через Telegram Mini App.</p>
+      <p class="muted">Telegram ID из @userinfobot. Эти люди могут входить через Telegram Mini App и получают уведомления о заявках.</p>
       <div class="list" id="mgr-list"></div>
       <div class="toolbar">
         <button type="button" class="primary" id="mgr-add">+ Менеджер</button>
         <button type="button" class="ghost" id="mgr-save">Сохранить</button>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-settings">
+      <div class="card" style="margin-bottom:12px">
+        <h2 style="margin:0 0 8px;font-size:1rem">Смена пароля</h2>
+        <div class="meta" style="margin-bottom:10px">Новый пароль сохранится на сервере (перекроет ENV).</div>
+        <div class="field-grid two">
+          <div class="field"><label>Текущий</label><input id="pwd-current" type="password" /></div>
+          <div class="field"><label>Новый (≥8)</label><input id="pwd-next" type="password" /></div>
+        </div>
+        <div class="p-footer" style="border:0;padding-top:0">
+          <button type="button" class="primary" id="pwd-save">Сменить пароль</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2 style="margin:0 0 8px;font-size:1rem">Лог действий</h2>
+        <div class="toolbar"><button type="button" class="ghost" id="actions-refresh">Обновить</button></div>
+        <div id="actions-list" class="muted">—</div>
       </div>
     </section>
   </main>
@@ -356,7 +423,9 @@
   </div>
 
   <script>
-    const STATUS_LABELS = { new:"Новая", in_progress:"В работе", done:"Готово", cancelled:"Отмена" };
+    const STATUS_LABELS = {
+      new:"Новая", in_progress:"В работе", done:"Готово", cancelled:"Отмена", archived:"Архив"
+    };
     const state = {
       tab: "orders",
       status: "new",
@@ -415,6 +484,7 @@
       if (state.tab === "stats") loadStats();
       if (state.tab === "faq") loadFaq();
       if (state.tab === "managers") loadManagers();
+      if (state.tab === "settings") loadSettings();
     });
 
     /* orders */
@@ -435,6 +505,7 @@
     async function loadOrders() {
       const box = $("orders");
       box.innerHTML = `<div class="empty">Загрузка…</div>`;
+      await ensureFaqCached();
       const params = new URLSearchParams();
       if (state.status) params.set("status", state.status);
       if (state.q) params.set("q", state.q);
@@ -459,30 +530,42 @@
               : null;
           const mgrOpts = [`<option value="">—</option>`]
             .concat(state.managers.map((m) =>
-              `<option value="${m.telegram_id}" ${Number(o.assigned_to) === Number(m.telegram_id) ? "selected" : ""}>${m.name}</option>`
+              `<option value="${m.telegram_id}" ${Number(o.assigned_to) === Number(m.telegram_id) ? "selected" : ""}>${escapeAttr(m.name)}</option>`
             )).join("");
           const statusBtns = state.statuses.filter((s) => s !== st).map((s) =>
-            `<button type="button" data-patch="${o.id}" data-status="${s}">${STATUS_LABELS[s]}</button>`
+            `<button type="button" data-patch="${o.id}" data-status="${s}">${STATUS_LABELS[s] || s}</button>`
           ).join("");
+          const replyText = `Здравствуйте! По заявке #${o.id} (${o.product_name || ""}, ${o.color_name || ""}, ${o.storage || ""}). Менеджер КнязьMobile на связи.`;
           return `<article class="card" data-order="${o.id}">
             <div class="card-top">
-              <h2>#${o.id} · ${o.product_name || "—"}</h2>
+              <h2>#${o.id} · ${escapeHtml(o.product_name || "—")}</h2>
               <span class="badge ${st}">${STATUS_LABELS[st] || st}</span>
             </div>
-            <div class="muted">${o.color_name || "—"} · ${o.storage || "—"} · <b style="color:var(--text)">${priceText(o.price)}</b> · ${o.payment_title || ""}</div>
-            <div class="muted">📞 <a href="tel:${o.phone}" style="color:var(--accent)">${o.phone}</a>
+            <div class="muted">${escapeHtml(o.color_name || "—")} · ${escapeHtml(o.storage || "—")} · <b style="color:var(--text)">${priceText(o.price)}</b> · ${escapeHtml(o.payment_title || "")}</div>
+            <div class="muted">📞 <a href="tel:${escapeAttr(o.phone)}" style="color:var(--accent)">${escapeHtml(o.phone)}</a>
               ${tgLink ? ` · <a href="${tgLink}" target="_blank" rel="noopener" style="color:var(--accent)">Написать в TG</a>` : ""}</div>
-            <div class="muted">${o.telegram_full_name || "—"} ${o.telegram_username ? "@"+o.telegram_username : ""} · ${fmtDate(o.created_at)}</div>
-            <div class="muted">Ответственный: ${o.assigned_name || "не назначен"}</div>
+            <div class="muted">${escapeHtml(o.telegram_full_name || "—")} ${o.telegram_username ? "@"+escapeHtml(o.telegram_username) : ""} · ${fmtDate(o.created_at)}</div>
+            <div class="muted">Ответственный: ${escapeHtml(o.assigned_name || "не назначен")}</div>
             <label class="muted">Заметка</label>
-            <textarea data-note="${o.id}">${o.manager_note || ""}</textarea>
+            <textarea data-note="${o.id}">${escapeHtml(o.manager_note || "")}</textarea>
+            <div class="actions" style="margin-top:8px">
+              <select data-faq-reply="${o.id}" style="flex:1;min-width:140px">
+                <option value="">Шаблон ответа…</option>
+                ${(state.faq || []).map((f) => `<option value="${escapeAttr(f.body)}">${escapeHtml(f.title)}</option>`).join("")}
+              </select>
+              <button type="button" data-copy-reply="${o.id}" data-text="${escapeAttr(replyText)}">Копировать ответ</button>
+            </div>
             <div class="actions">
               <button type="button" class="primary" data-take="${o.id}">Взять</button>
               <button type="button" data-save-note="${o.id}">Сохранить заметку</button>
               <select data-assign="${o.id}">${mgrOpts}</select>
               ${statusBtns}
-              <a class="btn" href="tel:${o.phone}">Позвонить</a>
+              <a class="btn" href="tel:${escapeAttr(o.phone)}">Позвонить</a>
+              <button type="button" data-history="${o.id}">История</button>
+              <button type="button" data-archive="${o.id}">В архив</button>
+              <button type="button" class="danger" data-del-order="${o.id}">Удалить</button>
             </div>
+            <div class="hist hidden" id="hist-${o.id}"></div>
           </article>`;
         }).join("");
       } catch (ex) {
@@ -494,6 +577,10 @@
       const take = e.target.closest("[data-take]");
       const patch = e.target.closest("[data-patch]");
       const saveNote = e.target.closest("[data-save-note]");
+      const copyReply = e.target.closest("[data-copy-reply]");
+      const history = e.target.closest("[data-history]");
+      const archive = e.target.closest("[data-archive]");
+      const delOrder = e.target.closest("[data-del-order]");
       try {
         if (take) {
           await api("/api/orders/" + take.dataset.take, { method: "PATCH", body: JSON.stringify({ take: true }) });
@@ -511,6 +598,37 @@
           await api("/api/orders/" + id, { method: "PATCH", body: JSON.stringify({ manager_note: note }) });
           toast("Заметка сохранена");
         }
+        if (copyReply) {
+          const sel = document.querySelector(`select[data-faq-reply="${copyReply.dataset.copyReply}"]`);
+          const text = (sel && sel.value) || copyReply.dataset.text || "";
+          await navigator.clipboard.writeText(text);
+          toast("Скопировано");
+        }
+        if (history) {
+          const id = history.dataset.history;
+          const box = $("hist-" + id);
+          if (!box) return;
+          if (!box.classList.contains("hidden") && box.dataset.loaded) {
+            box.classList.add("hidden");
+            return;
+          }
+          const data = await api("/api/orders/" + id + "/events");
+          box.dataset.loaded = "1";
+          box.classList.remove("hidden");
+          box.innerHTML = (data.items || []).length
+            ? data.items.map((ev) => `<div><b>${fmtDate(ev.created_at)}</b> · ${escapeHtml(ev.actor || "")} · ${escapeHtml(ev.kind)}: ${escapeHtml(ev.message)}</div>`).join("")
+            : "Пока нет событий";
+        }
+        if (archive && confirm("В архив?")) {
+          await api("/api/orders/" + archive.dataset.archive, { method: "PATCH", body: JSON.stringify({ status: "archived" }) });
+          toast("В архиве");
+          loadOrders();
+        }
+        if (delOrder && confirm("Удалить заявку навсегда?")) {
+          await api("/api/orders/" + delOrder.dataset.delOrder, { method: "DELETE" });
+          toast("Удалено");
+          loadOrders();
+        }
       } catch (ex) { toast(ex.message); }
     });
     $("orders").addEventListener("change", async (e) => {
@@ -525,6 +643,14 @@
         loadOrders();
       } catch (ex) { toast(ex.message); }
     });
+
+    async function ensureFaqCached() {
+      if (state.faq) return;
+      try {
+        const data = await api("/api/faq");
+        state.faq = data.items || [];
+      } catch (_) { state.faq = []; }
+    }
 
     $("search").onclick = () => {
       state.q = $("q").value.trim();
@@ -578,6 +704,13 @@
       sel.innerHTML = cats.map((c) =>
         `<option value="${escapeAttr(c.id)}" ${c.id === cur ? "selected" : ""}>${escapeHtml(c.title)}</option>`
       ).join("") || `<option value="">нет категорий</option>`;
+      const bulk = $("bulk-cat");
+      if (bulk) {
+        const bcur = bulk.value;
+        bulk.innerHTML = `<option value="">Все</option>` + cats.map((c) =>
+          `<option value="${escapeAttr(c.id)}" ${c.id === bcur ? "selected" : ""}>${escapeHtml(c.title)}</option>`
+        ).join("");
+      }
     }
     function renderCatSidebar() {
       const cats = state.catalog?.categories || [];
@@ -718,15 +851,22 @@
         box.innerHTML = products.length
           ? products.map((p) => {
               const cover = coverOf(p);
-              return `<article class="prod-tile" data-open-prod="${escapeAttr(p.id)}" title="Редактировать">
+              return `<article class="prod-tile ${p.hidden ? "hidden-prod" : ""}" data-open-prod="${escapeAttr(p.id)}" title="Редактировать">
                 <div class="tile-img">${cover ? `<img src="${escapeAttr(cover)}" alt="" />` : `<span class="ph">нет фото</span>`}</div>
                 <div class="tile-meta">
                   <h3 class="tile-name">${escapeHtml(p.name)}</h3>
                   <div class="tile-price">${escapeHtml(priceRange(p))}</div>
                   <div class="tile-pills">
                     ${p.badge ? `<span class="p-pill">${escapeHtml(p.badge)}</span>` : ""}
+                    ${p.hidden ? `<span class="p-pill dim">скрыт</span>` : ""}
                     <span class="p-pill dim">${escapeHtml(stockLabel(p))}</span>
                   </div>
+                </div>
+                <div class="tile-actions">
+                  <button type="button" data-move-up="${escapeAttr(p.id)}">↑</button>
+                  <button type="button" data-move-down="${escapeAttr(p.id)}">↓</button>
+                  <button type="button" data-dup="${escapeAttr(p.id)}">копия</button>
+                  <button type="button" data-hide="${escapeAttr(p.id)}" data-hidden="${p.hidden ? "0" : "1"}">${p.hidden ? "показать" : "скрыть"}</button>
                 </div>
               </article>`;
             }).join("")
@@ -742,6 +882,70 @@
     }
 
     $("panel-catalog").addEventListener("click", async (e) => {
+      if (e.target.closest(".tile-actions")) {
+        e.stopPropagation();
+        const moveUp = e.target.closest("[data-move-up]");
+        const moveDown = e.target.closest("[data-move-down]");
+        const dup = e.target.closest("[data-dup]");
+        const hide = e.target.closest("[data-hide]");
+        try {
+          if (moveUp) {
+            await api("/api/catalog/product/" + encodeURIComponent(moveUp.dataset.moveUp) + "/move", {
+              method: "POST", body: JSON.stringify({ direction: "up" }),
+            });
+            loadCatalog();
+          }
+          if (moveDown) {
+            await api("/api/catalog/product/" + encodeURIComponent(moveDown.dataset.moveDown) + "/move", {
+              method: "POST", body: JSON.stringify({ direction: "down" }),
+            });
+            loadCatalog();
+          }
+          if (dup) {
+            await api("/api/catalog/product/" + encodeURIComponent(dup.dataset.dup) + "/duplicate", { method: "POST" });
+            toast("Копия создана (скрыта)");
+            loadCatalog();
+          }
+          if (hide) {
+            await api("/api/catalog/product/" + encodeURIComponent(hide.dataset.hide) + "/hidden", {
+              method: "PATCH",
+              body: JSON.stringify({ hidden: hide.dataset.hidden === "1" }),
+            });
+            toast(hide.dataset.hidden === "1" ? "Скрыт с витрины" : "Снова на витрине");
+            loadCatalog();
+          }
+        } catch (ex) { toast(ex.message); }
+        return;
+      }
+      if (e.target.id === "xlsx-export" || e.target.closest("#xlsx-export")) {
+        e.preventDefault();
+        try {
+          const res = await fetch(basePath() + "/api/catalog/export.xlsx", { credentials: "same-origin" });
+          if (!res.ok) throw new Error("Экспорт не удался");
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url; a.download = "knyaz-catalog-export.xlsx"; a.click();
+          URL.revokeObjectURL(url);
+          toast("Экспорт скачан");
+        } catch (ex) { toast(ex.message); }
+        return;
+      }
+      if (e.target.id === "bulk-prices" || e.target.closest("#bulk-prices")) {
+        try {
+          const result = await api("/api/catalog/bulk-prices", {
+            method: "POST",
+            body: JSON.stringify({
+              mode: $("bulk-mode").value,
+              value: Number($("bulk-value").value),
+              category: $("bulk-cat").value || undefined,
+            }),
+          });
+          toast(`Цены обновлены у ${result.products} тов.`);
+          loadCatalog();
+        } catch (ex) { toast(ex.message); }
+        return;
+      }
       if (e.target.id === "xlsx-template" || e.target.closest("#xlsx-template")) {
         e.preventDefault();
         try {
@@ -769,7 +973,7 @@
         return;
       }
       const openProd = e.target.closest("[data-open-prod]");
-      if (openProd) {
+      if (openProd && !e.target.closest(".tile-actions")) {
         openProductModal(openProd.dataset.openProd);
         return;
       }
@@ -978,21 +1182,73 @@
     /* stats */
     async function loadStats() {
       try {
-        const s = await api("/api/stats");
+        const period = $("stats-period")?.value || "";
+        const s = await api("/api/stats" + (period ? `?period=${encodeURIComponent(period)}` : ""));
         $("stats-cards").innerHTML = `
           <div class="stat">Всего<b>${s.total}</b></div>
           <div class="stat">Сегодня<b>${s.today}</b></div>
           <div class="stat">7 дней<b>${s.week}</b></div>
+          <div class="stat">30 дней<b>${s.month || 0}</b></div>
           <div class="stat">Новые<b>${s.by_status?.new || 0}</b></div>
           <div class="stat">В работе<b>${s.by_status?.in_progress || 0}</b></div>
-          <div class="stat">Готово<b>${s.by_status?.done || 0}</b></div>`;
+          <div class="stat">Готово<b>${s.by_status?.done || 0}</b></div>
+          <div class="stat">Выручка (готово)<b>${Number(s.revenue_done || 0).toLocaleString("ru-RU")}</b></div>
+          <div class="stat">Период · заявки<b>${s.period_total || 0}</b></div>
+          <div class="stat">Период · выручка<b>${Number(s.period_revenue || 0).toLocaleString("ru-RU")}</b></div>`;
         $("stats-top").innerHTML = (s.top_products || []).length
-          ? s.top_products.map((p) => `<div>${p.product_name}: <b>${p.n}</b></div>`).join("")
+          ? s.top_products.map((p) => `<div>${escapeHtml(p.product_name)}: <b>${p.n}</b></div>`).join("")
           : "Пока нет данных";
+        const colors = (s.top_colors || []).map((c) => `${escapeHtml(c.color_name)}: <b>${c.n}</b>`).join(" · ") || "—";
+        const stor = (s.top_storage || []).map((c) => `${escapeHtml(c.storage)}: <b>${c.n}</b>`).join(" · ") || "—";
+        $("stats-extra").innerHTML = `<div>Цвета: ${colors}</div><div style="margin-top:8px">Память: ${stor}</div>`;
+        $("stats-repeats").innerHTML = (s.repeat_phones || []).length
+          ? s.repeat_phones.map((r) =>
+              `<div><a href="#" data-repeat-phone="${escapeAttr(r.phone)}" style="color:var(--accent)">${escapeHtml(r.phone)}</a> · <b>${r.n}</b> заявок · ${fmtDate(r.last_at)}</div>`
+            ).join("")
+          : "Повторных нет";
       } catch (ex) {
         $("stats-cards").innerHTML = `<div class="error">${ex.message}</div>`;
       }
     }
+    $("stats-refresh") && ($("stats-refresh").onclick = () => loadStats());
+    $("panel-stats")?.addEventListener("click", (e) => {
+      const a = e.target.closest("[data-repeat-phone]");
+      if (!a) return;
+      e.preventDefault();
+      state.tab = "orders";
+      state.q = a.dataset.repeatPhone;
+      state.status = "";
+      document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t.dataset.tab === "orders"));
+      document.querySelectorAll(".panel").forEach((p) => p.classList.toggle("active", p.id === "panel-orders"));
+      $("q").value = state.q;
+      loadOrders();
+    });
+
+    /* settings */
+    async function loadSettings() {
+      try {
+        const data = await api("/api/actions?limit=80");
+        $("actions-list").innerHTML = (data.items || []).length
+          ? data.items.map((a) =>
+              `<div style="margin:6px 0"><b>${fmtDate(a.at)}</b> · ${escapeHtml(a.actor)} · ${escapeHtml(a.action)} · ${escapeHtml(a.detail || "")}</div>`
+            ).join("")
+          : "Пока пусто";
+      } catch (ex) {
+        $("actions-list").innerHTML = `<div class="error">${ex.message}</div>`;
+      }
+    }
+    $("actions-refresh") && ($("actions-refresh").onclick = () => loadSettings());
+    $("pwd-save") && ($("pwd-save").onclick = async () => {
+      try {
+        await api("/api/password", {
+          method: "POST",
+          body: JSON.stringify({ current: $("pwd-current").value, next: $("pwd-next").value }),
+        });
+        $("pwd-current").value = "";
+        $("pwd-next").value = "";
+        toast("Пароль обновлён");
+      } catch (ex) { toast(ex.message); }
+    });
 
     /* faq */
     async function loadFaq() {
@@ -1000,6 +1256,7 @@
       try {
         const data = await api("/api/faq");
         const items = data.items || [];
+        state.faq = items;
         box.innerHTML = items.map((f) => `
           <article class="card" data-faq="${f.id}">
             <input data-ftitle value="${escapeAttr(f.title)}" style="width:100%;margin-bottom:8px" />

@@ -53,7 +53,15 @@ function saveCatalog(data) {
 }
 
 function getCatalog() {
-  return loadRawCatalog().data;
+  const data = loadRawCatalog().data;
+  data.products = (data.products || [])
+    .map((p, i) => ({
+      ...p,
+      hidden: Boolean(p.hidden),
+      sort_order: Number.isFinite(Number(p.sort_order)) ? Number(p.sort_order) : i,
+    }))
+    .sort((a, b) => a.sort_order - b.sort_order || String(a.name).localeCompare(String(b.name), "ru"));
+  return data;
 }
 
 function upsertProduct(product) {
@@ -61,7 +69,10 @@ function upsertProduct(product) {
   if (!product || !product.id) throw new Error("product.id required");
   const idx = data.products.findIndex((p) => p.id === product.id);
   if (idx >= 0) data.products[idx] = { ...data.products[idx], ...product };
-  else data.products.push(product);
+  else {
+    const maxSort = data.products.reduce((m, p) => Math.max(m, Number(p.sort_order) || 0), 0);
+    data.products.push({ ...product, sort_order: product.sort_order ?? maxSort + 1, hidden: Boolean(product.hidden) });
+  }
   saveCatalog(data);
   return data.products.find((p) => p.id === product.id);
 }
@@ -506,6 +517,128 @@ function importCatalogFromExcel(buffer) {
   };
 }
 
+function duplicateProduct(productId) {
+  const { data } = loadRawCatalog();
+  const src = data.products.find((p) => p.id === productId);
+  if (!src) throw new Error("Товар не найден");
+  let base = `${src.id}-copy`;
+  let n = 1;
+  let id = base;
+  while (data.products.some((p) => p.id === id)) {
+    n += 1;
+    id = `${base}${n}`;
+  }
+  const maxSort = data.products.reduce((m, p) => Math.max(m, Number(p.sort_order) || 0), 0);
+  const copy = {
+    ...JSON.parse(JSON.stringify(src)),
+    id,
+    name: `${src.name} (копия)`,
+    sort_order: maxSort + 1,
+    hidden: true,
+  };
+  data.products.push(copy);
+  saveCatalog(data);
+  return copy;
+}
+
+function setProductHidden(productId, hidden) {
+  const { data } = loadRawCatalog();
+  const product = data.products.find((p) => p.id === productId);
+  if (!product) throw new Error("Товар не найден");
+  product.hidden = Boolean(hidden);
+  saveCatalog(data);
+  return product;
+}
+
+function moveProduct(productId, direction) {
+  const { data } = loadRawCatalog();
+  const products = [...data.products].sort(
+    (a, b) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0) || String(a.name).localeCompare(String(b.name), "ru")
+  );
+  products.forEach((p, i) => {
+    p.sort_order = i;
+  });
+  const idx = products.findIndex((p) => p.id === productId);
+  if (idx < 0) throw new Error("Товар не найден");
+  const swapWith = direction === "up" ? idx - 1 : idx + 1;
+  if (swapWith >= 0 && swapWith < products.length) {
+    const tmp = products[idx];
+    products[idx] = products[swapWith];
+    products[swapWith] = tmp;
+    products.forEach((p, i) => {
+      p.sort_order = i;
+    });
+  }
+  data.products = products;
+  saveCatalog(data);
+  return products.find((p) => p.id === productId);
+}
+
+function bulkAdjustPrices({ mode, value, category, product_ids } = {}) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) throw new Error("Некорректное значение");
+  const { data } = loadRawCatalog();
+  let ids = null;
+  if (Array.isArray(product_ids) && product_ids.length) {
+    ids = new Set(product_ids.map(String));
+  }
+  let touched = 0;
+  for (const p of data.products || []) {
+    if (ids && !ids.has(p.id)) continue;
+    if (category && p.category !== category) continue;
+    for (const cfg of p.configs || []) {
+      let price = Number(cfg.price) || 0;
+      if (mode === "percent") price = Math.round(price * (1 + amount / 100));
+      else if (mode === "add") price = Math.round(price + amount);
+      else if (mode === "set") price = Math.round(amount);
+      else throw new Error("mode: percent | add | set");
+      cfg.price = Math.max(0, price);
+    }
+    touched += 1;
+  }
+  saveCatalog(data);
+  return { ok: true, products: touched };
+}
+
+function buildCatalogExportBuffer() {
+  const data = getCatalog();
+  const rows = [];
+  for (const p of data.products || []) {
+    const colors = p.colors?.length ? p.colors : [{ id: "", name: "", hex: "" }];
+    const configs = p.configs?.length ? p.configs : [{ storage: "", price: 0, in_stock: true }];
+    for (const color of colors) {
+      for (const cfg of configs) {
+        rows.push({
+          id: p.id,
+          name: p.name,
+          category: p.category,
+          category_title: (data.categories || []).find((c) => c.id === p.category)?.title || p.category,
+          badge: p.badge || "",
+          gift: p.gift || "",
+          note: p.note || "",
+          color_id: color.id || "",
+          color_name: color.name || "",
+          color_hex: color.hex || "",
+          storage: cfg.storage || "",
+          price: cfg.price || 0,
+          in_stock: cfg.in_stock ? "да" : "нет",
+          hidden: p.hidden ? "да" : "нет",
+          sort_order: p.sort_order ?? 0,
+        });
+      }
+    }
+  }
+  const wb = XLSX.utils.book_new();
+  const headers = [
+    ...IMPORT_HEADERS,
+    "hidden",
+    "sort_order",
+  ];
+  const ws = XLSX.utils.json_to_sheet(rows.length ? rows : [{ id: "", name: "" }], { header: headers });
+  XLSX.utils.book_append_sheet(wb, ws, "catalog");
+  return XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+}
+
 module.exports = {
   getCatalog,
   saveCatalog,
@@ -521,7 +654,12 @@ module.exports = {
   deleteColor,
   saveUploadedImage,
   buildCatalogTemplateBuffer,
+  buildCatalogExportBuffer,
   importCatalogFromExcel,
+  duplicateProduct,
+  setProductHidden,
+  moveProduct,
+  bulkAdjustPrices,
   loadManagers,
   saveManagers,
   isAllowedAdminId,

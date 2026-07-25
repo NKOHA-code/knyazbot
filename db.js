@@ -58,6 +58,18 @@ async function initDb() {
     await p.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW()`);
 
     await p.query(`
+      CREATE TABLE IF NOT EXISTS order_events (
+        id BIGSERIAL PRIMARY KEY,
+        order_id BIGINT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        actor TEXT,
+        kind TEXT NOT NULL,
+        message TEXT NOT NULL DEFAULT ''
+      );
+    `);
+    await p.query(`CREATE INDEX IF NOT EXISTS order_events_order_id_idx ON order_events(order_id)`);
+
+    await p.query(`
       CREATE TABLE IF NOT EXISTS faq_templates (
         id BIGSERIAL PRIMARY KEY,
         title TEXT NOT NULL,
@@ -128,20 +140,38 @@ async function saveOrder(order) {
   return result.rows[0];
 }
 
-const ORDER_STATUSES = ["new", "in_progress", "done", "cancelled"];
+const ORDER_STATUSES = ["new", "in_progress", "done", "cancelled", "archived"];
 
-function periodClause(period, params) {
-  if (period === "today") {
-    params.push();
-    return `created_at >= date_trunc('day', NOW())`;
-  }
-  if (period === "week") {
-    return `created_at >= NOW() - INTERVAL '7 days'`;
-  }
+function periodClause(period) {
+  if (period === "today") return `created_at >= date_trunc('day', NOW())`;
+  if (period === "week") return `created_at >= NOW() - INTERVAL '7 days'`;
+  if (period === "month") return `created_at >= NOW() - INTERVAL '30 days'`;
   return null;
 }
 
-async function listOrders({ status, q, product_id, period, limit = 50, offset = 0 } = {}) {
+async function addOrderEvent(orderId, { actor, kind, message } = {}) {
+  const p = getPool();
+  if (!p || !orderId) return null;
+  const r = await p.query(
+    `INSERT INTO order_events (order_id, actor, kind, message) VALUES ($1,$2,$3,$4) RETURNING *`,
+    [orderId, actor || "system", kind || "note", String(message || "")]
+  );
+  return r.rows[0];
+}
+
+async function listOrderEvents(orderId, limit = 50) {
+  const p = getPool();
+  if (!p) return [];
+  const r = await p.query(
+    `SELECT id, order_id, created_at, actor, kind, message
+     FROM order_events WHERE order_id = $1
+     ORDER BY created_at DESC LIMIT $2`,
+    [orderId, Math.min(Math.max(Number(limit) || 50, 1), 200)]
+  );
+  return r.rows;
+}
+
+async function listOrders({ status, q, product_id, period, limit = 50, offset = 0, include_archived = false } = {}) {
   const p = getPool();
   if (!p) return { items: [], total: 0 };
 
@@ -150,12 +180,14 @@ async function listOrders({ status, q, product_id, period, limit = 50, offset = 
   if (status && ORDER_STATUSES.includes(status)) {
     params.push(status);
     where.push(`status = $${params.length}`);
+  } else if (!include_archived) {
+    where.push(`status <> 'archived'`);
   }
   if (product_id) {
     params.push(String(product_id));
     where.push(`product_id = $${params.length}`);
   }
-  const pc = periodClause(period, params);
+  const pc = periodClause(period);
   if (pc) where.push(pc);
   if (q && String(q).trim()) {
     params.push(`%${String(q).trim()}%`);
@@ -186,9 +218,25 @@ async function listOrders({ status, q, product_id, period, limit = 50, offset = 
   return { items: result.rows, total };
 }
 
-async function updateOrder(id, patch = {}) {
+async function getOrder(id) {
   const p = getPool();
   if (!p) return null;
+  const r = await p.query(`SELECT * FROM orders WHERE id = $1`, [id]);
+  return r.rows[0] || null;
+}
+
+async function deleteOrder(id) {
+  const p = getPool();
+  if (!p) return false;
+  const r = await p.query(`DELETE FROM orders WHERE id = $1 RETURNING id`, [id]);
+  return Boolean(r.rowCount);
+}
+
+async function updateOrder(id, patch = {}, meta = {}) {
+  const p = getPool();
+  if (!p) return null;
+  const before = await getOrder(id);
+  if (!before) return null;
   const sets = [];
   const params = [];
   if (patch.status !== undefined) {
@@ -208,7 +256,7 @@ async function updateOrder(id, patch = {}) {
     params.push(patch.assigned_name || null);
     sets.push(`assigned_name = $${params.length}`);
   }
-  if (!sets.length) return null;
+  if (!sets.length) return before;
   sets.push(`updated_at = NOW()`);
   params.push(id);
   const result = await p.query(
@@ -216,35 +264,119 @@ async function updateOrder(id, patch = {}) {
      RETURNING *`,
     params
   );
-  return result.rows[0] || null;
+  const row = result.rows[0] || null;
+  if (row) {
+    const actor = meta.actor || "admin";
+    if (patch.status !== undefined && patch.status !== before.status) {
+      await addOrderEvent(id, {
+        actor,
+        kind: "status",
+        message: `${before.status} → ${patch.status}`,
+      });
+    }
+    if (patch.manager_note !== undefined && patch.manager_note !== before.manager_note) {
+      await addOrderEvent(id, {
+        actor,
+        kind: "note",
+        message: String(patch.manager_note || "").slice(0, 500),
+      });
+    }
+    if (patch.assigned_to !== undefined && Number(patch.assigned_to) !== Number(before.assigned_to)) {
+      await addOrderEvent(id, {
+        actor,
+        kind: "assign",
+        message: patch.assigned_name || String(patch.assigned_to || "снят"),
+      });
+    }
+  }
+  return row;
 }
 
 async function updateOrderStatus(id, status) {
   return updateOrder(id, { status });
 }
 
-async function getOrderStats() {
+async function getOrderStats(period) {
   const p = getPool();
   if (!p) {
-    return { total: 0, by_status: {}, today: 0, week: 0, top_products: [] };
+    return {
+      total: 0,
+      by_status: {},
+      today: 0,
+      week: 0,
+      month: 0,
+      top_products: [],
+      top_colors: [],
+      top_storage: [],
+      repeat_phones: [],
+      revenue_done: 0,
+      period: period || "all",
+      period_total: 0,
+      period_revenue: 0,
+    };
   }
-  const total = await p.query(`SELECT COUNT(*)::int AS n FROM orders`);
-  const byStatus = await p.query(`SELECT status, COUNT(*)::int AS n FROM orders GROUP BY status`);
-  const today = await p.query(`SELECT COUNT(*)::int AS n FROM orders WHERE created_at >= date_trunc('day', NOW())`);
-  const week = await p.query(`SELECT COUNT(*)::int AS n FROM orders WHERE created_at >= NOW() - INTERVAL '7 days'`);
+  const pc = periodClause(period);
+  const periodWhere = pc ? `WHERE ${pc} AND status <> 'archived'` : `WHERE status <> 'archived'`;
+
+  const total = await p.query(`SELECT COUNT(*)::int AS n FROM orders WHERE status <> 'archived'`);
+  const byStatus = await p.query(
+    `SELECT status, COUNT(*)::int AS n FROM orders WHERE status <> 'archived' GROUP BY status`
+  );
+  const today = await p.query(
+    `SELECT COUNT(*)::int AS n FROM orders WHERE status <> 'archived' AND created_at >= date_trunc('day', NOW())`
+  );
+  const week = await p.query(
+    `SELECT COUNT(*)::int AS n FROM orders WHERE status <> 'archived' AND created_at >= NOW() - INTERVAL '7 days'`
+  );
+  const month = await p.query(
+    `SELECT COUNT(*)::int AS n FROM orders WHERE status <> 'archived' AND created_at >= NOW() - INTERVAL '30 days'`
+  );
   const top = await p.query(
     `SELECT product_id, product_name, COUNT(*)::int AS n
-     FROM orders GROUP BY product_id, product_name
+     FROM orders WHERE status <> 'archived' GROUP BY product_id, product_name
      ORDER BY n DESC LIMIT 10`
   );
+  const topColors = await p.query(
+    `SELECT color_name, COUNT(*)::int AS n FROM orders
+     WHERE status <> 'archived' AND COALESCE(color_name,'') <> ''
+     GROUP BY color_name ORDER BY n DESC LIMIT 8`
+  );
+  const topStorage = await p.query(
+    `SELECT storage, COUNT(*)::int AS n FROM orders
+     WHERE status <> 'archived' AND COALESCE(storage,'') <> ''
+     GROUP BY storage ORDER BY n DESC LIMIT 8`
+  );
+  const repeats = await p.query(
+    `SELECT phone, COUNT(*)::int AS n, MAX(created_at) AS last_at
+     FROM orders WHERE status <> 'archived'
+     GROUP BY phone HAVING COUNT(*) > 1
+     ORDER BY n DESC, last_at DESC LIMIT 15`
+  );
+  const revenueDone = await p.query(
+    `SELECT COALESCE(SUM(price),0)::int AS s FROM orders WHERE status = 'done'`
+  );
+  const periodTotal = await p.query(`SELECT COUNT(*)::int AS n FROM orders ${periodWhere}`);
+  const periodRevSql = pc
+    ? `SELECT COALESCE(SUM(price),0)::int AS s FROM orders WHERE ${pc} AND status = 'done'`
+    : `SELECT COALESCE(SUM(price),0)::int AS s FROM orders WHERE status = 'done'`;
+  const periodRev = await p.query(periodRevSql);
+
   const by_status = {};
   for (const row of byStatus.rows) by_status[row.status] = row.n;
   return {
     total: total.rows[0]?.n || 0,
     today: today.rows[0]?.n || 0,
     week: week.rows[0]?.n || 0,
+    month: month.rows[0]?.n || 0,
     by_status,
     top_products: top.rows,
+    top_colors: topColors.rows,
+    top_storage: topStorage.rows,
+    repeat_phones: repeats.rows,
+    revenue_done: revenueDone.rows[0]?.s || 0,
+    period: period || "all",
+    period_total: periodTotal.rows[0]?.n || 0,
+    period_revenue: periodRev.rows[0]?.s || 0,
   };
 }
 
@@ -312,8 +444,12 @@ module.exports = {
   saveOrder,
   getPool,
   listOrders,
+  getOrder,
   updateOrder,
   updateOrderStatus,
+  deleteOrder,
+  addOrderEvent,
+  listOrderEvents,
   getOrderStats,
   listFaq,
   saveFaq,

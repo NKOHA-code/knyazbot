@@ -9,5 +9,7 @@ __pycache__/
 tools/
 bot/webapp/
 bothost-values.txt
+data/admin-password.json
+data/admin-actions.jsonl
 Dockerfile
 Dockerfile.custom.bak
