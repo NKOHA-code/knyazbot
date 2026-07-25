@@ -86,12 +86,30 @@
     }
     #panel-catalog .cat-toolbar h2{margin:0;font-size:1.15rem;font-weight:600;letter-spacing:-.02em}
     .cat-layout{
-      display:grid;gap:16px;align-items:start;
+      display:flex;flex-direction:column;gap:16px;align-items:stretch;
     }
+    .cat-main{order:-1;min-width:0}
+    .cat-side{order:1;display:grid;gap:12px}
+    .cat-tools{
+      border:1px solid rgba(212,179,106,.14);border-radius:18px;background:rgba(0,0,0,.15);
+      overflow:hidden;
+    }
+    .cat-tools > summary{
+      list-style:none;cursor:pointer;padding:14px 16px;font-weight:650;color:var(--accent);
+      user-select:none;
+    }
+    .cat-tools > summary::-webkit-details-marker{display:none}
+    .cat-tools > summary::after{content:" ▾";float:right;opacity:.7}
+    .cat-tools[open] > summary::after{content:" ▴"}
+    .cat-tools-body{display:grid;gap:12px;padding:0 12px 12px}
     @media(min-width:900px){
-      .cat-layout{grid-template-columns:270px minmax(0,1fr)}
+      .cat-layout{display:grid;grid-template-columns:270px minmax(0,1fr);align-items:start}
+      .cat-side{order:0;position:sticky;top:16px}
+      .cat-main{order:0}
+      .cat-tools{border:0;background:transparent;overflow:visible}
+      .cat-tools > summary{display:none}
+      .cat-tools-body{padding:0}
     }
-    .cat-side{display:grid;gap:12px;position:sticky;top:16px}
     .side-card{
       background:linear-gradient(180deg,#221f1a 0%,#1a1714 100%);
       border:1px solid rgba(212,179,106,.14);
@@ -276,6 +294,9 @@
     <section class="panel" id="panel-catalog">
       <div class="cat-layout">
         <aside class="cat-side">
+          <details class="cat-tools" id="cat-tools">
+            <summary>Категории, Excel и цены</summary>
+            <div class="cat-tools-body">
           <div class="side-card">
             <div class="p-section-title">Категории</div>
             <div id="cat-list"></div>
@@ -349,6 +370,8 @@
               <button type="button" class="primary" id="new-prod" style="width:100%">Добавить товар</button>
             </div>
           </div>
+            </div>
+          </details>
         </aside>
         <div class="cat-main">
           <div class="cat-toolbar">
@@ -1351,6 +1374,14 @@
       location.href = basePath() + "/";
     };
 
+    function syncCatToolsOpen() {
+      const el = $("cat-tools");
+      if (!el) return;
+      if (window.matchMedia("(min-width: 900px)").matches) el.open = true;
+    }
+    syncCatToolsOpen();
+    window.addEventListener("resize", syncCatToolsOpen);
+
     async function boot() {
       try {
         state.me = await api("/api/me");
@@ -1359,6 +1390,7 @@
         try { state.catalog = await api("/api/catalog"); fillProductFilter(); } catch (_) {}
         renderStatusChips();
         loadOrders();
+        syncCatToolsOpen();
       } catch (_) {}
     }
     boot();
