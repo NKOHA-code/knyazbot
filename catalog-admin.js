@@ -249,28 +249,39 @@ function defaultManagers() {
 }
 
 function loadManagers() {
+  const byId = new Map();
+
+  const add = (telegramId, name) => {
+    const id = Number(telegramId);
+    if (!Number.isFinite(id) || id <= 0) return;
+    if (!byId.has(id)) {
+      byId.set(id, {
+        telegram_id: id,
+        name: String(name || "").trim() || (id === Number(process.env.ADMIN_CHAT_ID || 0) ? "Владелец" : `Менеджер ${id}`),
+      });
+    }
+  };
+
+  // 1) ENV — всегда (Bothost ADMIN_USER_IDS)
+  for (const m of defaultManagers()) add(m.telegram_id, m.name);
+
+  // 2) файл data/managers.json — имена/доп. люди из админки
   try {
     if (fs.existsSync(MANAGERS_FILE)) {
       const data = readJsonFile(MANAGERS_FILE);
-      if (Array.isArray(data) && data.length) {
-        const list = data
-          .map((m) => ({
-            telegram_id: Number(m.telegram_id),
-            name: String(m.name || "").trim() || `ID ${m.telegram_id}`,
-          }))
-          .filter((m) => Number.isFinite(m.telegram_id) && m.telegram_id > 0);
-        // always keep owner from ENV if missing
-        const ownerId = Number(process.env.ADMIN_CHAT_ID || 0);
-        if (ownerId > 0 && !list.some((m) => Number(m.telegram_id) === ownerId)) {
-          list.unshift({ telegram_id: ownerId, name: "Владелец" });
-        }
-        return list.length ? list : defaultManagers();
+      if (Array.isArray(data)) {
+        for (const m of data) add(m.telegram_id, m.name);
       }
     }
   } catch (_) {
     /* ignore */
   }
-  return defaultManagers();
+
+  // 3) владелец на всякий случай
+  add(process.env.ADMIN_CHAT_ID, "Владелец");
+
+  const list = [...byId.values()];
+  return list.length ? list : defaultManagers();
 }
 
 function saveManagers(list) {
