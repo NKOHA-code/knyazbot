@@ -126,6 +126,81 @@ function patchConfig(productId, configId, patch) {
   return product;
 }
 
+function storageToId(storage) {
+  const m = String(storage || "").match(/(\d+)/);
+  return m ? m[1] : slugifyId(storage) || `cfg-${Date.now()}`;
+}
+
+function addConfig(productId, { storage, price, in_stock } = {}) {
+  const { data } = loadRawCatalog();
+  const product = data.products.find((p) => p.id === productId);
+  if (!product) throw new Error("product not found");
+  const stor = String(storage || "").trim();
+  if (!stor) throw new Error("Укажи память, например 512GB");
+  if (!product.configs) product.configs = [];
+  let id = storageToId(stor);
+  if (product.configs.some((c) => c.id === id || c.storage === stor)) {
+    throw new Error("Такой конфиг уже есть");
+  }
+  product.configs.push({
+    id,
+    storage: stor,
+    price: Number(price) || 0,
+    in_stock: in_stock === undefined ? true : Boolean(in_stock),
+  });
+  saveCatalog(data);
+  return product;
+}
+
+function deleteConfig(productId, configId) {
+  const { data } = loadRawCatalog();
+  const product = data.products.find((p) => p.id === productId);
+  if (!product) throw new Error("product not found");
+  const before = (product.configs || []).length;
+  product.configs = (product.configs || []).filter((c) => c.id !== configId);
+  if (product.configs.length === before) return false;
+  if (!product.configs.length) {
+    throw new Error("Нужен хотя бы один конфиг");
+  }
+  saveCatalog(data);
+  return true;
+}
+
+function addColor(productId, { id, name, hex } = {}) {
+  const { data } = loadRawCatalog();
+  const product = data.products.find((p) => p.id === productId);
+  if (!product) throw new Error("product not found");
+  const colorName = String(name || "").trim();
+  if (!colorName) throw new Error("Укажи название цвета");
+  let colorId = slugifyId(id || colorName);
+  if (!colorId) colorId = `c-${Date.now()}`;
+  if (!product.colors) product.colors = [];
+  if (product.colors.some((c) => c.id === colorId)) throw new Error("Такой цвет уже есть");
+  product.colors.push({
+    id: colorId,
+    name: colorName,
+    hex: String(hex || "#888888").trim() || "#888888",
+    image: null,
+  });
+  saveCatalog(data);
+  return product;
+}
+
+function deleteColor(productId, colorId) {
+  const { data } = loadRawCatalog();
+  const product = data.products.find((p) => p.id === productId);
+  if (!product) throw new Error("product not found");
+  const before = (product.colors || []).length;
+  product.colors = (product.colors || []).filter((c) => c.id !== colorId);
+  if (product.colors.length === before) return false;
+  if (!product.colors.length) throw new Error("Нужен хотя бы один цвет");
+  if (product.image && !product.colors.some((c) => c.image === product.image)) {
+    product.image = product.colors.find((c) => c.image)?.image || null;
+  }
+  saveCatalog(data);
+  return true;
+}
+
 function patchColor(productId, colorId, patch) {
   const { data } = loadRawCatalog();
   const product = data.products.find((p) => p.id === productId);
@@ -439,7 +514,11 @@ module.exports = {
   upsertCategory,
   deleteCategory,
   patchConfig,
+  addConfig,
+  deleteConfig,
   patchColor,
+  addColor,
+  deleteColor,
   saveUploadedImage,
   buildCatalogTemplateBuffer,
   importCatalogFromExcel,

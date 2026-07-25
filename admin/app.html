@@ -159,7 +159,19 @@
       padding:12px;border-radius:14px;background:#14120f;border:1px solid var(--line);
     }
     .price-tile .stor{font-weight:650;min-width:64px}
+    .price-tile input[data-storage]{width:90px;border-radius:10px;font-weight:650}
     .price-tile input[type=number]{width:110px;border-radius:10px}
+    .price-tile .del-mini,.color-tile .del-mini{
+      border:0;background:rgba(196,92,92,.12);color:var(--bad);border-radius:8px;padding:6px 8px;cursor:pointer;
+    }
+    .add-row{
+      display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px;
+      padding:12px;border-radius:14px;border:1px dashed rgba(212,179,106,.28);
+      background:rgba(212,179,106,.04);
+    }
+    .add-row input{width:auto;min-width:0}
+    .add-row input[data-new-storage],.add-row input[data-new-color-name]{flex:1;min-width:100px}
+    .add-row input[data-new-price]{width:100px}
     .stock{
       display:inline-flex;align-items:center;gap:8px;font-size:.82rem;color:var(--muted);
       margin-left:auto;
@@ -599,12 +611,13 @@
     function editorHtml(p) {
       const configs = (p.configs || []).map((c) => `
         <div class="price-tile" data-pid="${escapeAttr(p.id)}" data-cid="${escapeAttr(c.id)}">
-          <span class="stor">${escapeHtml(c.storage)}</span>
+          <input data-storage value="${escapeAttr(c.storage)}" placeholder="512GB" />
           <input type="number" data-price value="${c.price || 0}" />
           <label class="stock">
             <input type="checkbox" data-stock ${c.in_stock ? "checked" : ""} /> в наличии
           </label>
           <button type="button" data-save-cfg title="Сохранить">OK</button>
+          <button type="button" class="del-mini" data-del-cfg title="Удалить">×</button>
         </div>`).join("");
       const colors = (p.colors || []).map((c) => `
         <div class="color-tile" data-pid="${escapeAttr(p.id)}" data-color="${escapeAttr(c.id)}">
@@ -618,6 +631,7 @@
             <div class="color-actions">
               <input type="color" data-hex value="${escapeAttr(c.hex || "#888888")}" title="цвет" />
               <label class="file-btn">фото<input type="file" accept="image/*" data-upload hidden /></label>
+              <button type="button" class="del-mini" data-del-color title="Удалить">×</button>
             </div>
           </div>
         </div>`).join("");
@@ -660,10 +674,20 @@
         <div class="p-section">
           <div class="p-section-title">Конфиги / цены</div>
           <div class="price-grid">${configs || `<div class="muted">Нет конфигов</div>`}</div>
+          <div class="add-row" data-pid="${escapeAttr(p.id)}">
+            <input data-new-storage placeholder="512GB" />
+            <input type="number" data-new-price placeholder="цена" value="0" />
+            <button type="button" class="primary" data-add-cfg>Добавить конфиг</button>
+          </div>
         </div>
         <div class="p-section">
           <div class="p-section-title">Цвета / фото</div>
           <div class="color-grid">${colors || `<div class="muted">Нет цветов</div>`}</div>
+          <div class="add-row" data-pid="${escapeAttr(p.id)}">
+            <input data-new-color-name placeholder="Black" />
+            <input type="color" data-new-color-hex value="#1c1c1e" title="цвет" />
+            <button type="button" class="primary" data-add-color>Добавить цвет</button>
+          </div>
         </div>
         <div class="p-footer">
           <button type="button" class="primary" data-save-prod="${escapeAttr(p.id)}">Сохранить товар</button>
@@ -756,6 +780,10 @@
 
       const delCat = e.target.closest("[data-del-cat]");
       const saveCfg = e.target.closest("[data-save-cfg]");
+      const delCfg = e.target.closest("[data-del-cfg]");
+      const addCfg = e.target.closest("[data-add-cfg]");
+      const delColor = e.target.closest("[data-del-color]");
+      const addColor = e.target.closest("[data-add-color]");
       const saveProd = e.target.closest("[data-save-prod]");
       const delProd = e.target.closest("[data-del-prod]");
       try {
@@ -791,11 +819,55 @@
           await api(`/api/catalog/product/${row.dataset.pid}/config/${row.dataset.cid}`, {
             method: "PATCH",
             body: JSON.stringify({
+              storage: row.querySelector("[data-storage]")?.value?.trim() || undefined,
               price: Number(row.querySelector("[data-price]").value),
               in_stock: row.querySelector("[data-stock]").checked,
             }),
           });
           toast("Цена/наличие сохранены");
+          loadCatalog();
+          return;
+        }
+        if (delCfg) {
+          const row = delCfg.closest(".price-tile");
+          if (!confirm("Удалить конфиг?")) return;
+          await api(`/api/catalog/product/${row.dataset.pid}/config/${row.dataset.cid}`, { method: "DELETE" });
+          toast("Конфиг удалён");
+          loadCatalog();
+          return;
+        }
+        if (addCfg) {
+          const row = addCfg.closest(".add-row");
+          const storage = row.querySelector("[data-new-storage]").value.trim();
+          const price = Number(row.querySelector("[data-new-price]").value) || 0;
+          if (!storage) return toast("Укажи память, например 512GB");
+          await api(`/api/catalog/product/${row.dataset.pid}/config`, {
+            method: "POST",
+            body: JSON.stringify({ storage, price, in_stock: true }),
+          });
+          toast("Конфиг добавлен");
+          loadCatalog();
+          return;
+        }
+        if (delColor) {
+          const tile = delColor.closest(".color-tile");
+          if (!confirm("Удалить цвет?")) return;
+          await api(`/api/catalog/product/${tile.dataset.pid}/color/${tile.dataset.color}`, { method: "DELETE" });
+          toast("Цвет удалён");
+          loadCatalog();
+          return;
+        }
+        if (addColor) {
+          const row = addColor.closest(".add-row");
+          const name = row.querySelector("[data-new-color-name]").value.trim();
+          const hex = row.querySelector("[data-new-color-hex]").value;
+          if (!name) return toast("Укажи название цвета");
+          await api(`/api/catalog/product/${row.dataset.pid}/color`, {
+            method: "POST",
+            body: JSON.stringify({ name, hex }),
+          });
+          toast("Цвет добавлен");
+          loadCatalog();
           return;
         }
         if (saveProd) {

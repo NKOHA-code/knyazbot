@@ -387,10 +387,48 @@ function mountAdmin(app) {
     }
   });
 
+  app.post("/a/:path/api/catalog/product/:id/config", gatePath, requireAuth, (req, res) => {
+    try {
+      const product = catalogAdmin.addConfig(req.params.id, req.body || {});
+      res.json({ ok: true, product });
+    } catch (err) {
+      res.status(400).json({ detail: err.message });
+    }
+  });
+
+  app.delete("/a/:path/api/catalog/product/:id/config/:cfg", gatePath, requireAuth, (req, res) => {
+    try {
+      const ok = catalogAdmin.deleteConfig(req.params.id, req.params.cfg);
+      if (!ok) return res.status(404).json({ detail: "Не найден" });
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(400).json({ detail: err.message });
+    }
+  });
+
   app.patch("/a/:path/api/catalog/product/:id/color/:colorId", gatePath, requireAuth, (req, res) => {
     try {
       const product = catalogAdmin.patchColor(req.params.id, req.params.colorId, req.body || {});
       res.json({ ok: true, product });
+    } catch (err) {
+      res.status(400).json({ detail: err.message });
+    }
+  });
+
+  app.post("/a/:path/api/catalog/product/:id/color", gatePath, requireAuth, (req, res) => {
+    try {
+      const product = catalogAdmin.addColor(req.params.id, req.body || {});
+      res.json({ ok: true, product });
+    } catch (err) {
+      res.status(400).json({ detail: err.message });
+    }
+  });
+
+  app.delete("/a/:path/api/catalog/product/:id/color/:colorId", gatePath, requireAuth, (req, res) => {
+    try {
+      const ok = catalogAdmin.deleteColor(req.params.id, req.params.colorId);
+      if (!ok) return res.status(404).json({ detail: "Не найден" });
+      res.json({ ok: true });
     } catch (err) {
       res.status(400).json({ detail: err.message });
     }
