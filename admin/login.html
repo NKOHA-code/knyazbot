@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Вход</title>
+  <style>
+    :root {
+      --bg: #12110f;
+      --card: #1c1a17;
+      --text: #f4f1ea;
+      --muted: #9a9488;
+      --accent: #d4b36a;
+      --danger: #c45c5c;
+      --line: rgba(255,255,255,0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(212,179,106,0.12), transparent 50%),
+        var(--bg);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    .box {
+      width: min(100%, 380px);
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 28px 24px;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    p {
+      margin: 0 0 20px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #14120f;
+      color: var(--text);
+      font-size: 1rem;
+      outline: none;
+    }
+    input:focus { border-color: rgba(212,179,106,0.5); }
+    button {
+      width: 100%;
+      margin-top: 16px;
+      padding: 12px 14px;
+      border: 0;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #1a150c;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.6; cursor: default; }
+    .err {
+      margin-top: 12px;
+      color: var(--danger);
+      font-size: 0.85rem;
+      min-height: 1.2em;
+    }
+  </style>
+</head>
+<body>
+  <form class="box" id="form" autocomplete="current-password">
+    <h1>КнязьMobile</h1>
+    <p>Служебный вход</p>
+    <label for="password">Пароль</label>
+    <input id="password" name="password" type="password" required autofocus />
+    <button type="submit" id="btn">Войти</button>
+    <div class="err" id="err"></div>
+  </form>
+  <script>
+    const form = document.getElementById("form");
+    const err = document.getElementById("err");
+    const btn = document.getElementById("btn");
+    const base = location.pathname.replace(/\/?$/, "");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      err.textContent = "";
+      btn.disabled = true;
+      btn.textContent = "…";
+      try {
+        const res = await fetch(base + "/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ password: document.getElementById("password").value }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.detail || "Ошибка входа");
+        location.href = data.redirect || base + "/app";
+      } catch (ex) {
+        err.textContent = ex.message || "Ошибка";
+        btn.disabled = false;
+        btn.textContent = "Войти";
+      }
+    });
+  </script>
+</body>
+</html>

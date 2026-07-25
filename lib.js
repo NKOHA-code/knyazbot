@@ -4,6 +4,7 @@ const crypto = require("crypto");
 const express = require("express");
 const { Bot, InlineKeyboard, Keyboard } = require("grammy");
 const { initDb, saveOrder } = require("./db");
+const { mountAdmin } = require("./admin-panel");
 
 const PORT = Number(process.env.PORT || 3000);
 const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -126,6 +127,8 @@ async function startHttp(botForNotify) {
   }
   const app = express();
   app.use(express.json({ limit: "1mb" }));
+  app.use(express.urlencoded({ extended: false }));
+  mountAdmin(app);
   app.use(express.static(path.join(__dirname, "public")));
 
   app.get("/api/health", async (_req, res) => {

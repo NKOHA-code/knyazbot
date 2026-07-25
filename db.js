@@ -96,4 +96,63 @@ async function saveOrder(order) {
   return result.rows[0];
 }
 
-module.exports = { initDb, saveOrder, getPool };
+const ORDER_STATUSES = ["new", "in_progress", "done", "cancelled"];
+
+async function listOrders({ status, q, limit = 50, offset = 0 } = {}) {
+  const p = getPool();
+  if (!p) return { items: [], total: 0 };
+
+  const where = [];
+  const params = [];
+  if (status && ORDER_STATUSES.includes(status)) {
+    params.push(status);
+    where.push(`status = $${params.length}`);
+  }
+  if (q && String(q).trim()) {
+    params.push(`%${String(q).trim()}%`);
+    where.push(`(phone ILIKE $${params.length} OR product_name ILIKE $${params.length} OR telegram_full_name ILIKE $${params.length} OR telegram_username ILIKE $${params.length})`);
+  }
+  const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+
+  const countRes = await p.query(`SELECT COUNT(*)::int AS total FROM orders ${whereSql}`, params);
+  const total = countRes.rows[0]?.total || 0;
+
+  const lim = Math.min(Math.max(Number(limit) || 50, 1), 200);
+  const off = Math.max(Number(offset) || 0, 0);
+  params.push(lim);
+  params.push(off);
+  const result = await p.query(
+    `SELECT id, created_at, product_id, product_name, color_id, color_name, config_id, storage,
+            price, payment_id, payment_title, phone,
+            telegram_user_id, telegram_username, telegram_full_name, status
+     FROM orders
+     ${whereSql}
+     ORDER BY created_at DESC
+     LIMIT $${params.length - 1} OFFSET $${params.length}`,
+    params
+  );
+  return { items: result.rows, total };
+}
+
+async function updateOrderStatus(id, status) {
+  const p = getPool();
+  if (!p) return null;
+  if (!ORDER_STATUSES.includes(status)) {
+    throw new Error("invalid status");
+  }
+  const result = await p.query(
+    `UPDATE orders SET status = $1 WHERE id = $2
+     RETURNING id, status, created_at, product_name, phone`,
+    [status, id]
+  );
+  return result.rows[0] || null;
+}
+
+module.exports = {
+  initDb,
+  saveOrder,
+  getPool,
+  listOrders,
+  updateOrderStatus,
+  ORDER_STATUSES,
+};

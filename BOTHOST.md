@@ -40,9 +40,26 @@ SHOP_ADDRESS=Минск, Нововиленская 10
 SHOP_NAME=КнязьMobile
 ALLOW_INSECURE_ORDERS=false
 DATABASE_URL=postgresql://...
+PGSSL=false
+
+# Скрытая админка заявок (не светить в канале/боте)
+ADMIN_PATH=случайная_строка_16plus
+ADMIN_PASSWORD=сильный_пароль
+ADMIN_SESSION_SECRET=ещё_одна_случайная_строка_32
 ```
 
 `DATABASE_URL` — строка из Bothost Postgres. Заявки пишутся в таблицу `orders` + дублируются админу в Telegram.
+
+### Скрытая админка
+
+После деплоя с `ADMIN_PATH` / `ADMIN_PASSWORD` / `ADMIN_SESSION_SECRET`:
+
+- URL: `https://<домен>/a/<ADMIN_PATH>/`
+- Неверный путь → обычный 404 (админка не «светится»)
+- Вход по паролю, сессия в httpOnly cookie (~12 ч)
+- Список заявок, фильтр статуса, поиск, смена статуса
+
+Не публикуй ссылку в канале и в боте. Храни только у владельца/менеджера.
 
 После деплоя: `https://<домен>/api/health` → `{"ok":true}`  
 BotFather → Domain = хост без `https://` → `/start` у бота.
