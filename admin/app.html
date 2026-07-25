@@ -56,49 +56,67 @@
     .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#2a261f;border:1px solid var(--line);padding:10px 16px;border-radius:12px;z-index:20;display:none}
     .hidden{display:none!important}
 
-    /* Catalog redesign */
+    /* Catalog layout */
+    main:has(#panel-catalog.active){max-width:1180px}
     #panel-catalog .cat-toolbar{
-      display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:16px;
+      display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:12px;
     }
     #panel-catalog .cat-toolbar h2{margin:0;font-size:1.15rem;font-weight:600;letter-spacing:-.02em}
-    #catalog{display:grid;gap:14px}
-    .p-card{
+    .cat-layout{
+      display:grid;gap:16px;align-items:start;
+    }
+    @media(min-width:900px){
+      .cat-layout{grid-template-columns:270px minmax(0,1fr)}
+    }
+    .cat-side{display:grid;gap:12px;position:sticky;top:76px}
+    .side-card{
       background:linear-gradient(180deg,#221f1a 0%,#1a1714 100%);
       border:1px solid rgba(212,179,106,.14);
-      border-radius:20px;overflow:hidden;
-      box-shadow:0 10px 40px rgba(0,0,0,.35);
+      border-radius:18px;padding:14px;
+      box-shadow:0 8px 28px rgba(0,0,0,.28);
     }
-    .p-head{
-      display:grid;grid-template-columns:112px 1fr auto;gap:14px;align-items:center;
-      padding:14px;cursor:pointer;user-select:none;
+    .side-card .p-section-title{margin-bottom:12px}
+    .cat-item{
+      display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:12px;
+      border:1px solid transparent;margin-bottom:6px;cursor:pointer;
+      background:rgba(255,255,255,.03);
     }
-    .p-head:hover{background:rgba(255,255,255,.02)}
-    .p-cover{
-      width:112px;height:128px;border-radius:14px;overflow:hidden;
+    .cat-item:hover{border-color:var(--line)}
+    .cat-item.active{border-color:rgba(212,179,106,.4);background:rgba(212,179,106,.08)}
+    .cat-item .emoji{width:28px;text-align:center}
+    .cat-item .ttl{flex:1;font-size:.88rem;font-weight:600}
+    .cat-item .n{font-size:.72rem;color:var(--muted)}
+    .cat-item .del{
+      border:0;background:transparent;color:var(--muted);padding:4px 6px;border-radius:8px;cursor:pointer;
+    }
+    .cat-item .del:hover{color:var(--bad);background:rgba(196,92,92,.12)}
+    .side-fields{display:grid;gap:8px;margin-top:10px}
+    .side-fields .row2{display:grid;grid-template-columns:1fr 64px;gap:8px}
+    .prod-grid{
+      display:grid;gap:12px;
+      grid-template-columns:repeat(auto-fill,minmax(148px,1fr));
+    }
+    .prod-tile{
+      aspect-ratio:1;display:flex;flex-direction:column;
+      background:linear-gradient(180deg,#221f1a 0%,#1a1714 100%);
+      border:1px solid rgba(212,179,106,.14);
+      border-radius:18px;overflow:hidden;cursor:pointer;
+      box-shadow:0 8px 28px rgba(0,0,0,.28);
+      transition:transform .15s ease, border-color .15s ease;
+    }
+    .prod-tile:hover{transform:translateY(-2px);border-color:rgba(212,179,106,.4)}
+    .prod-tile .tile-img{
+      flex:1;min-height:0;display:grid;place-items:center;padding:10px 10px 0;
       background:
-        radial-gradient(circle at 50% 30%, rgba(212,179,106,.18), transparent 60%),
+        radial-gradient(circle at 50% 20%, rgba(212,179,106,.16), transparent 55%),
         #12100e;
-      border:1px solid var(--line);display:grid;place-items:center;
     }
-    .p-cover img{width:100%;height:100%;object-fit:contain;display:block}
-    .p-cover .ph{color:var(--muted);font-size:.75rem}
-    .p-title{margin:0;font-size:1.15rem;font-weight:650;letter-spacing:-.02em}
-    .p-sub{margin:6px 0 0;color:var(--muted);font-size:.82rem;line-height:1.35}
-    .p-price{margin-top:8px;color:var(--accent);font-weight:650;font-size:.95rem}
-    .p-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-    .p-pill{
-      font-size:.7rem;padding:4px 8px;border-radius:999px;font-weight:600;
-      background:rgba(212,179,106,.14);color:var(--accent);
-    }
-    .p-pill.dim{background:rgba(255,255,255,.05);color:var(--muted);font-weight:500}
-    .p-chev{
-      width:36px;height:36px;border-radius:50%;border:1px solid var(--line);
-      display:grid;place-items:center;color:var(--muted);transition:transform .2s ease;
-      background:rgba(0,0,0,.2);
-    }
-    .p-card.open .p-chev{transform:rotate(180deg);color:var(--accent);border-color:rgba(212,179,106,.35)}
-    .p-body{display:none;padding:0 14px 16px;border-top:1px solid var(--line)}
-    .p-card.open .p-body{display:block}
+    .prod-tile .tile-img img{width:100%;height:100%;object-fit:contain}
+    .prod-tile .tile-img .ph{color:var(--muted);font-size:.72rem}
+    .prod-tile .tile-meta{padding:10px 12px 12px}
+    .prod-tile .tile-name{margin:0;font-size:.92rem;font-weight:650;letter-spacing:-.02em;line-height:1.2}
+    .prod-tile .tile-price{margin-top:4px;color:var(--accent);font-size:.8rem;font-weight:650}
+    .prod-tile .tile-pills{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
     .p-section{margin-top:16px}
     .p-section-title{
       margin:0 0 10px;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;
@@ -150,11 +168,25 @@
       border:1px dashed rgba(212,179,106,.35);color:var(--accent);cursor:pointer;background:rgba(212,179,106,.06);
     }
     .p-footer{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;padding-top:12px;border-top:1px solid var(--line)}
-    .new-card{
-      border-style:dashed;border-color:rgba(212,179,106,.28);
-      background:rgba(212,179,106,.04);
+    .p-pill{
+      font-size:.68rem;padding:3px 7px;border-radius:999px;font-weight:600;
+      background:rgba(212,179,106,.14);color:var(--accent);
     }
-    .new-card .p-body{display:block;border-top:0;padding:16px}
+    .p-pill.dim{background:rgba(255,255,255,.05);color:var(--muted);font-weight:500}
+    .modal-backdrop{
+      position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.62);
+      display:none;align-items:flex-end;justify-content:center;padding:12px;
+    }
+    .modal-backdrop.open{display:flex}
+    @media(min-width:720px){.modal-backdrop{align-items:center}}
+    .modal-sheet{
+      width:min(860px,100%);max-height:min(92vh,900px);overflow:auto;
+      background:linear-gradient(180deg,#221f1a 0%,#1a1714 100%);
+      border:1px solid rgba(212,179,106,.2);border-radius:20px;
+      box-shadow:0 24px 80px rgba(0,0,0,.55);padding:16px;
+    }
+    .modal-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:8px}
+    .modal-top h3{margin:0;font-size:1.15rem}
      </style>
 </head>
 <body>
@@ -194,13 +226,62 @@
     </section>
 
     <section class="panel" id="panel-catalog">
-      <div class="cat-toolbar">
-        <div>
-          <h2>Каталог витрины</h2>
-          <div class="meta">Нажми на карточку — откроется редактирование</div>
+      <div class="cat-layout">
+        <aside class="cat-side">
+          <div class="side-card">
+            <div class="p-section-title">Категории</div>
+            <div id="cat-list"></div>
+            <div class="side-fields">
+              <div class="field">
+                <label>Новая категория</label>
+                <input id="new-cat-title" placeholder="Например: Xiaomi" />
+              </div>
+              <div class="row2">
+                <div class="field">
+                  <label>ID (необязательно)</label>
+                  <input id="new-cat-id" placeholder="xiaomi" />
+                </div>
+                <div class="field">
+                  <label>Иконка</label>
+                  <input id="new-cat-emoji" placeholder="✦" maxlength="4" />
+                </div>
+              </div>
+              <button type="button" class="primary" id="new-cat-btn" style="width:100%">Добавить категорию</button>
+            </div>
+          </div>
+          <div class="side-card">
+            <div class="p-section-title">Новый товар</div>
+            <div class="side-fields">
+              <div class="field">
+                <label>ID</label>
+                <input id="new-id" placeholder="iphone-18" />
+              </div>
+              <div class="field">
+                <label>Название</label>
+                <input id="new-name" placeholder="iPhone 18" />
+              </div>
+              <div class="field">
+                <label>Категория</label>
+                <select id="new-cat"></select>
+              </div>
+              <button type="button" class="primary" id="new-prod" style="width:100%">Добавить товар</button>
+            </div>
+          </div>
+        </aside>
+        <div class="cat-main">
+          <div class="cat-toolbar">
+            <div>
+              <h2>Каталог витрины</h2>
+              <div class="meta">Квадраты — клик для редактирования</div>
+            </div>
+          </div>
+          <div class="chips" id="cat-filter"></div>
+          <div class="prod-grid" id="catalog"></div>
         </div>
       </div>
-      <div class="list" id="catalog"></div>
+      <div class="modal-backdrop" id="prod-modal" aria-hidden="true">
+        <div class="modal-sheet" id="prod-modal-body"></div>
+      </div>
     </section>
 
     <section class="panel" id="panel-stats">
@@ -237,6 +318,8 @@
       statuses: Object.keys(STATUS_LABELS),
       managers: [],
       catalog: null,
+      catFilter: "all",
+      editProductId: null,
       me: null,
     };
 
@@ -436,129 +519,218 @@
       const n = configs.filter((c) => c.in_stock).length;
       return n === configs.length ? "в наличии" : n === 0 ? "нет в наличии" : `${n}/${configs.length} в наличии`;
     }
+    function catTitle(id) {
+      return (state.catalog?.categories || []).find((c) => c.id === id)?.title || id || "—";
+    }
+    function fillNewCatSelect() {
+      const sel = $("new-cat");
+      if (!sel) return;
+      const cats = state.catalog?.categories || [];
+      const cur = sel.value;
+      sel.innerHTML = cats.map((c) =>
+        `<option value="${escapeAttr(c.id)}" ${c.id === cur ? "selected" : ""}>${escapeHtml(c.title)}</option>`
+      ).join("") || `<option value="">нет категорий</option>`;
+    }
+    function renderCatSidebar() {
+      const cats = state.catalog?.categories || [];
+      const products = state.catalog?.products || [];
+      $("cat-list").innerHTML = cats.map((c) => {
+        const n = products.filter((p) => p.category === c.id).length;
+        const active = state.catFilter === c.id ? "active" : "";
+        return `<div class="cat-item ${active}" data-filter-cat="${escapeAttr(c.id)}">
+          <span class="emoji">${escapeHtml(c.emoji || "✦")}</span>
+          <span class="ttl">${escapeHtml(c.title)}</span>
+          <span class="n">${n}</span>
+          <button type="button" class="del" data-del-cat="${escapeAttr(c.id)}" title="Удалить">×</button>
+        </div>`;
+      }).join("") || `<div class="muted">Пока нет категорий</div>`;
+
+      $("cat-filter").innerHTML = [
+        `<button type="button" class="chip ${state.catFilter === "all" ? "active" : ""}" data-filter-cat="all">Все</button>`,
+        ...cats.map((c) =>
+          `<button type="button" class="chip ${state.catFilter === c.id ? "active" : ""}" data-filter-cat="${escapeAttr(c.id)}">${escapeHtml(c.emoji || "")} ${escapeHtml(c.title)}</button>`
+        ),
+      ].join("");
+      fillNewCatSelect();
+    }
+    function closeProductModal() {
+      state.editProductId = null;
+      const modal = $("prod-modal");
+      modal.classList.remove("open");
+      modal.setAttribute("aria-hidden", "true");
+      $("prod-modal-body").innerHTML = "";
+    }
+    function editorHtml(p) {
+      const configs = (p.configs || []).map((c) => `
+        <div class="price-tile" data-pid="${escapeAttr(p.id)}" data-cid="${escapeAttr(c.id)}">
+          <span class="stor">${escapeHtml(c.storage)}</span>
+          <input type="number" data-price value="${c.price || 0}" />
+          <label class="stock">
+            <input type="checkbox" data-stock ${c.in_stock ? "checked" : ""} /> в наличии
+          </label>
+          <button type="button" data-save-cfg title="Сохранить">OK</button>
+        </div>`).join("");
+      const colors = (p.colors || []).map((c) => `
+        <div class="color-tile" data-pid="${escapeAttr(p.id)}" data-color="${escapeAttr(c.id)}">
+          <div class="color-preview">
+            ${c.image
+              ? `<img src="${escapeAttr(c.image)}" alt="" />`
+              : `<div class="swatch-fallback" style="background:${escapeAttr(c.hex || "#888")}"></div>`}
+          </div>
+          <div class="color-meta">
+            <div class="name">${escapeHtml(c.name)}</div>
+            <div class="color-actions">
+              <input type="color" data-hex value="${escapeAttr(c.hex || "#888888")}" title="цвет" />
+              <label class="file-btn">фото<input type="file" accept="image/*" data-upload hidden /></label>
+            </div>
+          </div>
+        </div>`).join("");
+      const catOpts = (state.catalog.categories || []).map((c) =>
+        `<option value="${escapeAttr(c.id)}" ${c.id === p.category ? "selected" : ""}>${escapeHtml(c.title)}</option>`
+      ).join("");
+      return `
+        <div class="modal-top">
+          <div>
+            <h3>${escapeHtml(p.name)}</h3>
+            <div class="meta">${escapeHtml(p.id)} · ${escapeHtml(catTitle(p.category))}</div>
+          </div>
+          <button type="button" class="ghost" data-close-modal>Закрыть</button>
+        </div>
+        <div class="p-section" style="margin-top:0">
+          <div class="p-section-title">Основное</div>
+          <div class="field-grid two">
+            <div class="field">
+              <label>Название</label>
+              <input data-field="name" value="${escapeAttr(p.name || "")}" />
+            </div>
+            <div class="field">
+              <label>Бейдж</label>
+              <input data-field="badge" placeholder="Хит" value="${escapeAttr(p.badge || "")}" />
+            </div>
+          </div>
+          <div class="field" style="margin-top:10px">
+            <label>Категория</label>
+            <select data-field="category">${catOpts}</select>
+          </div>
+          <div class="field" style="margin-top:10px">
+            <label>Подарок / подзаголовок</label>
+            <input data-field="gift" value="${escapeAttr(p.gift || "")}" />
+          </div>
+          <div class="field" style="margin-top:10px">
+            <label>Заметка</label>
+            <textarea data-field="note">${escapeHtml(p.note || "")}</textarea>
+          </div>
+        </div>
+        <div class="p-section">
+          <div class="p-section-title">Конфиги / цены</div>
+          <div class="price-grid">${configs || `<div class="muted">Нет конфигов</div>`}</div>
+        </div>
+        <div class="p-section">
+          <div class="p-section-title">Цвета / фото</div>
+          <div class="color-grid">${colors || `<div class="muted">Нет цветов</div>`}</div>
+        </div>
+        <div class="p-footer">
+          <button type="button" class="primary" data-save-prod="${escapeAttr(p.id)}">Сохранить товар</button>
+          <button type="button" class="danger" data-del-prod="${escapeAttr(p.id)}">Удалить</button>
+        </div>`;
+    }
+    function openProductModal(productId) {
+      const p = (state.catalog?.products || []).find((x) => x.id === productId);
+      if (!p) return;
+      state.editProductId = productId;
+      $("prod-modal-body").innerHTML = editorHtml(p);
+      const modal = $("prod-modal");
+      modal.classList.add("open");
+      modal.setAttribute("aria-hidden", "false");
+    }
 
     async function loadCatalog() {
       const box = $("catalog");
-      box.innerHTML = `<div class="empty">Загрузка…</div>`;
+      box.innerHTML = `<div class="empty" style="grid-column:1/-1">Загрузка…</div>`;
       try {
         state.catalog = await api("/api/catalog");
         fillProductFilter();
-        const products = state.catalog.products || [];
-        box.innerHTML = products.map((p) => {
-          const cover = coverOf(p);
-          const configs = (p.configs || []).map((c) => `
-            <div class="price-tile" data-pid="${escapeAttr(p.id)}" data-cid="${escapeAttr(c.id)}">
-              <span class="stor">${escapeHtml(c.storage)}</span>
-              <input type="number" data-price value="${c.price || 0}" />
-              <label class="stock">
-                <input type="checkbox" data-stock ${c.in_stock ? "checked" : ""} /> в наличии
-              </label>
-              <button type="button" data-save-cfg title="Сохранить">OK</button>
-            </div>`).join("");
-          const colors = (p.colors || []).map((c) => `
-            <div class="color-tile" data-pid="${escapeAttr(p.id)}" data-color="${escapeAttr(c.id)}">
-              <div class="color-preview">
-                ${c.image
-                  ? `<img src="${escapeAttr(c.image)}" alt="" />`
-                  : `<div class="swatch-fallback" style="background:${escapeAttr(c.hex || "#888")}"></div>`}
-              </div>
-              <div class="color-meta">
-                <div class="name">${escapeHtml(c.name)}</div>
-                <div class="color-actions">
-                  <input type="color" data-hex value="${escapeAttr(c.hex || "#888888")}" title="цвет" />
-                  <label class="file-btn">фото<input type="file" accept="image/*" data-upload hidden /></label>
-                </div>
-              </div>
-            </div>`).join("");
-          return `<article class="p-card" data-product="${escapeAttr(p.id)}">
-            <div class="p-head" data-toggle>
-              <div class="p-cover">${cover ? `<img src="${escapeAttr(cover)}" alt="" />` : `<span class="ph">нет фото</span>`}</div>
-              <div>
-                <h3 class="p-title">${escapeHtml(p.name)}</h3>
-                <p class="p-sub">${escapeHtml(p.gift || "без подарка")} · ${escapeHtml(p.id)}</p>
-                <div class="p-price">${escapeHtml(priceRange(p))}</div>
-                <div class="p-badges">
-                  ${p.badge ? `<span class="p-pill">${escapeHtml(p.badge)}</span>` : ""}
-                  <span class="p-pill dim">${escapeHtml(stockLabel(p))}</span>
-                  <span class="p-pill dim">${(p.colors || []).length} цв.</span>
-                </div>
-              </div>
-              <div class="p-chev" aria-hidden="true">▾</div>
-            </div>
-            <div class="p-body">
-              <div class="p-section">
-                <div class="p-section-title">Основное</div>
-                <div class="field-grid two">
-                  <div class="field">
-                    <label>Название</label>
-                    <input data-field="name" value="${escapeAttr(p.name || "")}" />
-                  </div>
-                  <div class="field">
-                    <label>Бейдж</label>
-                    <input data-field="badge" placeholder="Хит" value="${escapeAttr(p.badge || "")}" />
+        renderCatSidebar();
+        let products = state.catalog.products || [];
+        if (state.catFilter !== "all") {
+          products = products.filter((p) => p.category === state.catFilter);
+        }
+        box.innerHTML = products.length
+          ? products.map((p) => {
+              const cover = coverOf(p);
+              return `<article class="prod-tile" data-open-prod="${escapeAttr(p.id)}" title="Редактировать">
+                <div class="tile-img">${cover ? `<img src="${escapeAttr(cover)}" alt="" />` : `<span class="ph">нет фото</span>`}</div>
+                <div class="tile-meta">
+                  <h3 class="tile-name">${escapeHtml(p.name)}</h3>
+                  <div class="tile-price">${escapeHtml(priceRange(p))}</div>
+                  <div class="tile-pills">
+                    ${p.badge ? `<span class="p-pill">${escapeHtml(p.badge)}</span>` : ""}
+                    <span class="p-pill dim">${escapeHtml(stockLabel(p))}</span>
                   </div>
                 </div>
-                <div class="field" style="margin-top:10px">
-                  <label>Подарок / подзаголовок</label>
-                  <input data-field="gift" value="${escapeAttr(p.gift || "")}" />
-                </div>
-                <div class="field" style="margin-top:10px">
-                  <label>Заметка</label>
-                  <textarea data-field="note">${escapeHtml(p.note || "")}</textarea>
-                </div>
-              </div>
-              <div class="p-section">
-                <div class="p-section-title">Конфиги / цены</div>
-                <div class="price-grid">${configs || `<div class="muted">Нет конфигов</div>`}</div>
-              </div>
-              <div class="p-section">
-                <div class="p-section-title">Цвета / фото</div>
-                <div class="color-grid">${colors || `<div class="muted">Нет цветов</div>`}</div>
-              </div>
-              <div class="p-footer">
-                <button type="button" class="primary" data-save-prod="${escapeAttr(p.id)}">Сохранить товар</button>
-                <button type="button" class="danger" data-del-prod="${escapeAttr(p.id)}">Удалить</button>
-              </div>
-            </div>
-          </article>`;
-        }).join("") + `
-          <article class="p-card new-card">
-            <div class="p-body">
-              <div class="p-section-title">Новый товар</div>
-              <div class="field-grid two" style="margin-top:10px">
-                <div class="field">
-                  <label>ID</label>
-                  <input id="new-id" placeholder="iphone-18" />
-                </div>
-                <div class="field">
-                  <label>Категория</label>
-                  <select id="new-cat">${(state.catalog.categories||[]).map(c=>`<option value="${escapeAttr(c.id)}">${escapeHtml(c.title)}</option>`).join("")}</select>
-                </div>
-              </div>
-              <div class="field" style="margin-top:10px">
-                <label>Название</label>
-                <input id="new-name" placeholder="iPhone 18" />
-              </div>
-              <div class="p-footer">
-                <button type="button" class="primary" id="new-prod">Добавить товар</button>
-              </div>
-            </div>
-          </article>`;
+              </article>`;
+            }).join("")
+          : `<div class="empty" style="grid-column:1/-1">Нет товаров в этой категории</div>`;
+        if (state.editProductId) {
+          const still = (state.catalog.products || []).some((p) => p.id === state.editProductId);
+          if (still) openProductModal(state.editProductId);
+          else closeProductModal();
+        }
       } catch (ex) {
-        box.innerHTML = `<div class="error">${ex.message}</div>`;
+        box.innerHTML = `<div class="error" style="grid-column:1/-1">${ex.message}</div>`;
       }
     }
 
-    $("catalog").addEventListener("click", async (e) => {
-      const toggle = e.target.closest("[data-toggle]");
-      if (toggle && !e.target.closest("button, a, input, label")) {
-        toggle.closest(".p-card")?.classList.toggle("open");
+    $("panel-catalog").addEventListener("click", async (e) => {
+      const filterBtn = e.target.closest("[data-filter-cat]");
+      if (filterBtn && !e.target.closest("[data-del-cat]")) {
+        state.catFilter = filterBtn.dataset.filterCat || "all";
+        renderCatSidebar();
+        loadCatalog();
         return;
       }
+      const openProd = e.target.closest("[data-open-prod]");
+      if (openProd) {
+        openProductModal(openProd.dataset.openProd);
+        return;
+      }
+      if (e.target === $("prod-modal") || e.target.closest("[data-close-modal]")) {
+        closeProductModal();
+        return;
+      }
+
+      const delCat = e.target.closest("[data-del-cat]");
       const saveCfg = e.target.closest("[data-save-cfg]");
       const saveProd = e.target.closest("[data-save-prod]");
       const delProd = e.target.closest("[data-del-prod]");
       try {
+        if (delCat) {
+          e.stopPropagation();
+          if (!confirm("Удалить категорию?")) return;
+          await api("/api/catalog/category/" + encodeURIComponent(delCat.dataset.delCat), { method: "DELETE" });
+          if (state.catFilter === delCat.dataset.delCat) state.catFilter = "all";
+          toast("Категория удалена");
+          loadCatalog();
+          return;
+        }
+        if (e.target.id === "new-cat-btn" || e.target.closest("#new-cat-btn")) {
+          const title = $("new-cat-title").value.trim();
+          if (!title) return toast("Укажи название категории");
+          await api("/api/catalog/category", {
+            method: "PUT",
+            body: JSON.stringify({
+              title,
+              id: $("new-cat-id").value.trim() || undefined,
+              emoji: $("new-cat-emoji").value.trim() || "✦",
+            }),
+          });
+          $("new-cat-title").value = "";
+          $("new-cat-id").value = "";
+          $("new-cat-emoji").value = "";
+          toast("Категория добавлена");
+          loadCatalog();
+          return;
+        }
         if (saveCfg) {
           const row = saveCfg.closest(".price-tile");
           await api(`/api/catalog/product/${row.dataset.pid}/config/${row.dataset.cid}`, {
@@ -569,9 +741,10 @@
             }),
           });
           toast("Цена/наличие сохранены");
+          return;
         }
         if (saveProd) {
-          const card = saveProd.closest(".p-card");
+          const card = $("prod-modal-body");
           const id = saveProd.dataset.saveProd;
           const product = (state.catalog.products || []).find((p) => p.id === id);
           const body = {
@@ -580,20 +753,25 @@
             badge: card.querySelector('[data-field="badge"]').value || null,
             gift: card.querySelector('[data-field="gift"]').value || null,
             note: card.querySelector('[data-field="note"]').value || null,
+            category: card.querySelector('[data-field="category"]').value || product.category,
           };
           await api("/api/catalog/product", { method: "PUT", body: JSON.stringify(body) });
           toast("Товар сохранён");
           loadCatalog();
+          return;
         }
         if (delProd && confirm("Удалить товар?")) {
           await api("/api/catalog/product/" + delProd.dataset.delProd, { method: "DELETE" });
           toast("Удалено");
+          closeProductModal();
           loadCatalog();
+          return;
         }
         if (e.target.id === "new-prod" || e.target.closest("#new-prod")) {
           const id = $("new-id").value.trim();
           const name = $("new-name").value.trim();
           if (!id || !name) return toast("id и название");
+          if (!$("new-cat").value) return toast("Сначала создай категорию");
           await api("/api/catalog/product", {
             method: "PUT",
             body: JSON.stringify({
@@ -603,13 +781,15 @@
               image: null,
             }),
           });
+          $("new-id").value = "";
+          $("new-name").value = "";
           toast("Добавлено");
           loadCatalog();
         }
       } catch (ex) { toast(ex.message); }
     });
 
-    $("catalog").addEventListener("change", async (e) => {
+    $("panel-catalog").addEventListener("change", async (e) => {
       const fileInput = e.target.closest("[data-upload]");
       const hex = e.target.closest("[data-hex]");
       try {
@@ -643,6 +823,10 @@
           toast("Цвет обновлён");
         }
       } catch (ex) { toast(ex.message); }
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && state.editProductId) closeProductModal();
     });
 
     /* stats */

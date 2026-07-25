@@ -416,6 +416,25 @@ function mountAdmin(app) {
     }
   });
 
+  app.put("/a/:path/api/catalog/category", gatePath, requireAuth, (req, res) => {
+    try {
+      const category = catalogAdmin.upsertCategory(req.body || {});
+      res.json({ ok: true, category });
+    } catch (err) {
+      res.status(400).json({ detail: err.message || "Ошибка" });
+    }
+  });
+
+  app.delete("/a/:path/api/catalog/category/:id", gatePath, requireAuth, (req, res) => {
+    try {
+      const ok = catalogAdmin.deleteCategory(req.params.id);
+      if (!ok) return res.status(404).json({ detail: "Не найдена" });
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(400).json({ detail: err.message || "Ошибка" });
+    }
+  });
+
   // —— FAQ ——
   app.get("/a/:path/api/faq", gatePath, requireAuth, async (_req, res) => {
     try {

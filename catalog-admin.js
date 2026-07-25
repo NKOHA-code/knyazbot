@@ -74,6 +74,44 @@ function deleteProduct(productId) {
   return true;
 }
 
+function slugifyId(raw) {
+  return String(raw || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9а-яё_-]+/gi, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+}
+
+function upsertCategory(category) {
+  const { data } = loadRawCatalog();
+  if (!data.categories) data.categories = [];
+  const title = String(category?.title || "").trim();
+  if (!title) throw new Error("Название категории обязательно");
+  let id = String(category?.id || "").trim() || slugifyId(title);
+  id = slugifyId(id);
+  if (!id) throw new Error("Некорректный id категории");
+  const emoji = String(category?.emoji || "✦").trim().slice(0, 8) || "✦";
+  const idx = data.categories.findIndex((c) => c.id === id);
+  const row = { id, title, emoji };
+  if (idx >= 0) data.categories[idx] = { ...data.categories[idx], ...row };
+  else data.categories.push(row);
+  saveCatalog(data);
+  return data.categories.find((c) => c.id === id);
+}
+
+function deleteCategory(categoryId) {
+  const { data } = loadRawCatalog();
+  const id = String(categoryId || "");
+  const used = (data.products || []).some((p) => p.category === id);
+  if (used) throw new Error("Сначала перенеси или удали товары из этой категории");
+  const before = (data.categories || []).length;
+  data.categories = (data.categories || []).filter((c) => c.id !== id);
+  if (data.categories.length === before) return false;
+  saveCatalog(data);
+  return true;
+}
+
 function patchConfig(productId, configId, patch) {
   const { data } = loadRawCatalog();
   const product = data.products.find((p) => p.id === productId);
@@ -151,6 +189,8 @@ module.exports = {
   saveCatalog,
   upsertProduct,
   deleteProduct,
+  upsertCategory,
+  deleteCategory,
   patchConfig,
   patchColor,
   saveUploadedImage,
