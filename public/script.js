@@ -279,6 +279,7 @@
     state.categoryId = btn.dataset.cat;
     renderCategories();
     renderList();
+    showList();
   });
 
   els.productList.addEventListener("click", (e) => {
