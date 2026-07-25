@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex,nofollow" />
   <title>Админка — КнязьMobile</title>
+  <meta http-equiv="Cache-Control" content="no-cache" />
   <style>
     :root {
       --bg:#12110f; --card:#1c1a17; --text:#f4f1ea; --muted:#9a9488; --accent:#d4b36a;
@@ -85,30 +86,35 @@
       display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:12px;
     }
     #panel-catalog .cat-toolbar h2{margin:0;font-size:1.15rem;font-weight:600;letter-spacing:-.02em}
+    /* Catalog: products first on all screens; tools below (collapsible on mobile) */
     .cat-layout{
       display:flex;flex-direction:column;gap:16px;align-items:stretch;
     }
-    .cat-main{order:-1;min-width:0}
-    .cat-side{order:1;display:grid;gap:12px}
-    .cat-tools{
-      border:1px solid rgba(212,179,106,.14);border-radius:18px;background:rgba(0,0,0,.15);
-      overflow:hidden;
+    .cat-main{min-width:0;width:100%}
+    .cat-side{width:100%;display:grid;gap:12px}
+    .cat-tools-toggle{
+      display:flex;width:100%;justify-content:space-between;align-items:center;
+      padding:12px 14px;border-radius:14px;cursor:pointer;font:inherit;font-weight:650;
+      color:var(--accent);background:rgba(212,179,106,.08);
+      border:1px solid rgba(212,179,106,.28);
     }
-    .cat-tools > summary{
-      list-style:none;cursor:pointer;padding:14px 16px;font-weight:650;color:var(--accent);
-      user-select:none;
-    }
-    .cat-tools > summary::-webkit-details-marker{display:none}
-    .cat-tools > summary::after{content:" ▾";float:right;opacity:.7}
-    .cat-tools[open] > summary::after{content:" ▴"}
-    .cat-tools-body{display:grid;gap:12px;padding:0 12px 12px}
+    .cat-tools-body{display:none;gap:12px}
+    .cat-side.tools-open .cat-tools-body{display:grid}
+    .cat-side.tools-open .cat-tools-toggle .chev::after{content:"▴"}
+    .cat-tools-toggle .chev::after{content:"▾"}
     @media(min-width:900px){
-      .cat-layout{display:grid;grid-template-columns:270px minmax(0,1fr);align-items:start}
-      .cat-side{order:0;position:sticky;top:16px}
-      .cat-main{order:0}
-      .cat-tools{border:0;background:transparent;overflow:visible}
-      .cat-tools > summary{display:none}
-      .cat-tools-body{padding:0}
+      .cat-layout{
+        display:grid;grid-template-columns:minmax(0,1fr) 270px;align-items:start;
+      }
+      .cat-main{grid-column:1;grid-row:1}
+      .cat-side{grid-column:2;grid-row:1;position:sticky;top:16px}
+      .cat-tools-toggle{display:none}
+      .cat-tools-body{display:grid!important}
+    }
+    .prod-grid{
+      display:grid!important;gap:12px;width:100%;
+      grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+      min-height:120px;
     }
     .side-card{
       background:linear-gradient(180deg,#221f1a 0%,#1a1714 100%);
@@ -133,10 +139,6 @@
     .cat-item .del:hover{color:var(--bad);background:rgba(196,92,92,.12)}
     .side-fields{display:grid;gap:8px;margin-top:10px}
     .side-fields .row2{display:grid;grid-template-columns:1fr 64px;gap:8px}
-    .prod-grid{
-      display:grid;gap:12px;
-      grid-template-columns:repeat(auto-fill,minmax(148px,1fr));
-    }
     .prod-tile{
       aspect-ratio:1;display:flex;flex-direction:column;
       background:linear-gradient(180deg,#221f1a 0%,#1a1714 100%);
@@ -293,86 +295,6 @@
 
     <section class="panel" id="panel-catalog">
       <div class="cat-layout">
-        <aside class="cat-side">
-          <details class="cat-tools" id="cat-tools">
-            <summary>Категории, Excel и цены</summary>
-            <div class="cat-tools-body">
-          <div class="side-card">
-            <div class="p-section-title">Категории</div>
-            <div id="cat-list"></div>
-            <div class="side-fields">
-              <div class="field">
-                <label>Новая категория</label>
-                <input id="new-cat-title" placeholder="Например: Xiaomi" />
-              </div>
-              <div class="row2">
-                <div class="field">
-                  <label>ID (необязательно)</label>
-                  <input id="new-cat-id" placeholder="xiaomi" />
-                </div>
-                <div class="field">
-                  <label>Иконка</label>
-                  <input id="new-cat-emoji" placeholder="✦" maxlength="4" />
-                </div>
-              </div>
-              <button type="button" class="primary" id="new-cat-btn" style="width:100%">Добавить категорию</button>
-            </div>
-          </div>
-          <div class="side-card">
-            <div class="p-section-title">Excel</div>
-            <div class="meta" style="margin-bottom:10px">Скачай шаблон, заполни строки (цвет + память), затем импортируй .xlsx</div>
-            <div class="side-fields">
-              <a class="btn" id="xlsx-template" href="#" style="text-align:center;justify-content:center">Скачать шаблон</a>
-              <a class="btn" id="xlsx-export" href="#" style="text-align:center;justify-content:center">Экспорт каталога</a>
-              <label class="file-btn" style="display:block;margin:0">
-                Импорт Excel
-                <input type="file" id="xlsx-import" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden />
-              </label>
-            </div>
-          </div>
-          <div class="side-card">
-            <div class="p-section-title">Массовые цены</div>
-            <div class="side-fields">
-              <div class="field">
-                <label>Режим</label>
-                <select id="bulk-mode">
-                  <option value="percent">± %</option>
-                  <option value="add">± BYN</option>
-                  <option value="set">Задать цену</option>
-                </select>
-              </div>
-              <div class="field">
-                <label>Значение</label>
-                <input id="bulk-value" type="number" value="0" />
-              </div>
-              <div class="field">
-                <label>Категория (опц.)</label>
-                <select id="bulk-cat"><option value="">Все</option></select>
-              </div>
-              <button type="button" class="primary" id="bulk-prices" style="width:100%">Применить</button>
-            </div>
-          </div>
-          <div class="side-card">
-            <div class="p-section-title">Новый товар</div>
-            <div class="side-fields">
-              <div class="field">
-                <label>ID</label>
-                <input id="new-id" placeholder="iphone-18" />
-              </div>
-              <div class="field">
-                <label>Название</label>
-                <input id="new-name" placeholder="iPhone 18" />
-              </div>
-              <div class="field">
-                <label>Категория</label>
-                <select id="new-cat"></select>
-              </div>
-              <button type="button" class="primary" id="new-prod" style="width:100%">Добавить товар</button>
-            </div>
-          </div>
-            </div>
-          </details>
-        </aside>
         <div class="cat-main">
           <div class="cat-toolbar">
             <div>
@@ -383,6 +305,87 @@
           <div class="chips" id="cat-filter"></div>
           <div class="prod-grid" id="catalog"></div>
         </div>
+        <aside class="cat-side" id="cat-side">
+          <button type="button" class="cat-tools-toggle" id="cat-tools-toggle">
+            <span>Категории, Excel и цены</span>
+            <span class="chev"></span>
+          </button>
+          <div class="cat-tools-body">
+            <div class="side-card">
+              <div class="p-section-title">Категории</div>
+              <div id="cat-list"></div>
+              <div class="side-fields">
+                <div class="field">
+                  <label>Новая категория</label>
+                  <input id="new-cat-title" placeholder="Например: Xiaomi" />
+                </div>
+                <div class="row2">
+                  <div class="field">
+                    <label>ID (необязательно)</label>
+                    <input id="new-cat-id" placeholder="xiaomi" />
+                  </div>
+                  <div class="field">
+                    <label>Иконка</label>
+                    <input id="new-cat-emoji" placeholder="✦" maxlength="4" />
+                  </div>
+                </div>
+                <button type="button" class="primary" id="new-cat-btn" style="width:100%">Добавить категорию</button>
+              </div>
+            </div>
+            <div class="side-card">
+              <div class="p-section-title">Excel</div>
+              <div class="meta" style="margin-bottom:10px">Скачай шаблон, заполни строки (цвет + память), затем импортируй .xlsx</div>
+              <div class="side-fields">
+                <a class="btn" id="xlsx-template" href="#" style="text-align:center;justify-content:center">Скачать шаблон</a>
+                <a class="btn" id="xlsx-export" href="#" style="text-align:center;justify-content:center">Экспорт каталога</a>
+                <label class="file-btn" style="display:block;margin:0">
+                  Импорт Excel
+                  <input type="file" id="xlsx-import" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden />
+                </label>
+              </div>
+            </div>
+            <div class="side-card">
+              <div class="p-section-title">Массовые цены</div>
+              <div class="side-fields">
+                <div class="field">
+                  <label>Режим</label>
+                  <select id="bulk-mode">
+                    <option value="percent">± %</option>
+                    <option value="add">± BYN</option>
+                    <option value="set">Задать цену</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Значение</label>
+                  <input id="bulk-value" type="number" value="0" />
+                </div>
+                <div class="field">
+                  <label>Категория (опц.)</label>
+                  <select id="bulk-cat"><option value="">Все</option></select>
+                </div>
+                <button type="button" class="primary" id="bulk-prices" style="width:100%">Применить</button>
+              </div>
+            </div>
+            <div class="side-card">
+              <div class="p-section-title">Новый товар</div>
+              <div class="side-fields">
+                <div class="field">
+                  <label>ID</label>
+                  <input id="new-id" placeholder="iphone-18" />
+                </div>
+                <div class="field">
+                  <label>Название</label>
+                  <input id="new-name" placeholder="iPhone 18" />
+                </div>
+                <div class="field">
+                  <label>Категория</label>
+                  <select id="new-cat"></select>
+                </div>
+                <button type="button" class="primary" id="new-prod" style="width:100%">Добавить товар</button>
+              </div>
+            </div>
+          </div>
+        </aside>
       </div>
       <div class="modal-backdrop" id="prod-modal" aria-hidden="true">
         <div class="modal-sheet" id="prod-modal-body"></div>
@@ -1375,10 +1378,15 @@
     };
 
     function syncCatToolsOpen() {
-      const el = $("cat-tools");
-      if (!el) return;
-      if (window.matchMedia("(min-width: 900px)").matches) el.open = true;
+      const side = $("cat-side");
+      if (!side) return;
+      if (window.matchMedia("(min-width: 900px)").matches) {
+        side.classList.add("tools-open");
+      }
     }
+    $("cat-tools-toggle")?.addEventListener("click", () => {
+      $("cat-side")?.classList.toggle("tools-open");
+    });
     syncCatToolsOpen();
     window.addEventListener("resize", syncCatToolsOpen);
 
