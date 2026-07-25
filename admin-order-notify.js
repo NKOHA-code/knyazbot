@@ -35,9 +35,13 @@ function buildAdminOrderNotify(order, opts = {}) {
 
   const username = order.username ? String(order.username).replace(/^@/, "") : "";
   const fullName = escapeHtml(order.fullName || "Клиент");
+  const userId = order.userId && String(order.userId) !== "0" ? String(order.userId) : "";
   const clientLine = username
     ? `Клиент: ${fullName} · <a href="https://t.me/${escapeHtml(username)}">@${escapeHtml(username)}</a>`
     : `Клиент: ${fullName} · без username`;
+  const idHtml = userId
+    ? `<a href="tg://user?id=${escapeHtml(userId)}"><code>${escapeHtml(userId)}</code></a>`
+    : `<code>—</code>`;
 
   const text =
     `<b>Новая заявка${idPart}</b> · ${escapeHtml(shopName)}\n\n` +
@@ -48,11 +52,13 @@ function buildAdminOrderNotify(order, opts = {}) {
     `💳 Оплата: ${escapeHtml(order.payment || "")}\n` +
     `📞 Телефон: ${phoneHtml}\n\n` +
     `👤 ${clientLine}\n` +
-    `🆔 ID: <code>${escapeHtml(order.userId || "—")}</code>`;
+    `🆔 ID: ${idHtml}`;
 
   const row = [];
   if (username) {
     row.push({ text: "Написать", url: `https://t.me/${username}` });
+  } else if (userId) {
+    row.push({ text: "Написать", url: `tg://user?id=${userId}` });
   }
   if (adminUrl) {
     row.push({ text: "Открыть админку", url: `${adminUrl}/app` });
