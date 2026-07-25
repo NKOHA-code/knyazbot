@@ -55,7 +55,107 @@
     .thumb{width:48px;height:48px;object-fit:contain;border-radius:8px;background:#111;border:1px solid var(--line)}
     .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#2a261f;border:1px solid var(--line);padding:10px 16px;border-radius:12px;z-index:20;display:none}
     .hidden{display:none!important}
-  </style>
+
+    /* Catalog redesign */
+    #panel-catalog .cat-toolbar{
+      display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:16px;
+    }
+    #panel-catalog .cat-toolbar h2{margin:0;font-size:1.15rem;font-weight:600;letter-spacing:-.02em}
+    #catalog{display:grid;gap:14px}
+    .p-card{
+      background:linear-gradient(180deg,#221f1a 0%,#1a1714 100%);
+      border:1px solid rgba(212,179,106,.14);
+      border-radius:20px;overflow:hidden;
+      box-shadow:0 10px 40px rgba(0,0,0,.35);
+    }
+    .p-head{
+      display:grid;grid-template-columns:112px 1fr auto;gap:14px;align-items:center;
+      padding:14px;cursor:pointer;user-select:none;
+    }
+    .p-head:hover{background:rgba(255,255,255,.02)}
+    .p-cover{
+      width:112px;height:128px;border-radius:14px;overflow:hidden;
+      background:
+        radial-gradient(circle at 50% 30%, rgba(212,179,106,.18), transparent 60%),
+        #12100e;
+      border:1px solid var(--line);display:grid;place-items:center;
+    }
+    .p-cover img{width:100%;height:100%;object-fit:contain;display:block}
+    .p-cover .ph{color:var(--muted);font-size:.75rem}
+    .p-title{margin:0;font-size:1.15rem;font-weight:650;letter-spacing:-.02em}
+    .p-sub{margin:6px 0 0;color:var(--muted);font-size:.82rem;line-height:1.35}
+    .p-price{margin-top:8px;color:var(--accent);font-weight:650;font-size:.95rem}
+    .p-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+    .p-pill{
+      font-size:.7rem;padding:4px 8px;border-radius:999px;font-weight:600;
+      background:rgba(212,179,106,.14);color:var(--accent);
+    }
+    .p-pill.dim{background:rgba(255,255,255,.05);color:var(--muted);font-weight:500}
+    .p-chev{
+      width:36px;height:36px;border-radius:50%;border:1px solid var(--line);
+      display:grid;place-items:center;color:var(--muted);transition:transform .2s ease;
+      background:rgba(0,0,0,.2);
+    }
+    .p-card.open .p-chev{transform:rotate(180deg);color:var(--accent);border-color:rgba(212,179,106,.35)}
+    .p-body{display:none;padding:0 14px 16px;border-top:1px solid var(--line)}
+    .p-card.open .p-body{display:block}
+    .p-section{margin-top:16px}
+    .p-section-title{
+      margin:0 0 10px;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;
+      color:var(--muted);font-weight:650;
+    }
+    .field-grid{display:grid;gap:10px}
+    @media(min-width:720px){.field-grid.two{grid-template-columns:1fr 140px}}
+    .field label{display:block;font-size:.72rem;color:var(--muted);margin-bottom:6px}
+    .field input,.field textarea,.field select{
+      width:100%;background:#14120f;border:1px solid var(--line);border-radius:12px;padding:10px 12px;
+    }
+    .field textarea{min-height:78px}
+    .price-grid{display:grid;gap:8px}
+    @media(min-width:640px){.price-grid{grid-template-columns:1fr 1fr}}
+    .price-tile{
+      display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+      padding:12px;border-radius:14px;background:#14120f;border:1px solid var(--line);
+    }
+    .price-tile .stor{font-weight:650;min-width:64px}
+    .price-tile input[type=number]{width:110px;border-radius:10px}
+    .stock{
+      display:inline-flex;align-items:center;gap:8px;font-size:.82rem;color:var(--muted);
+      margin-left:auto;
+    }
+    .stock input{accent-color:var(--accent)}
+    .color-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+    .color-tile{
+      position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--line);
+      background:#10100e;transition:border-color .15s ease, transform .15s ease;
+    }
+    .color-tile:hover{border-color:rgba(212,179,106,.35);transform:translateY(-1px)}
+    .color-preview{
+      aspect-ratio:4/5;display:grid;place-items:center;
+      background:radial-gradient(circle at 50% 20%, rgba(255,255,255,.06), transparent 55%), #0e0d0b;
+    }
+    .color-preview img{width:100%;height:100%;object-fit:contain}
+    .color-preview .swatch-fallback{
+      width:42px;height:42px;border-radius:50%;border:2px solid rgba(255,255,255,.25);
+      box-shadow:0 8px 20px rgba(0,0,0,.4);
+    }
+    .color-meta{padding:10px;display:grid;gap:8px}
+    .color-meta .name{font-size:.85rem;font-weight:600}
+    .color-actions{display:flex;gap:6px;align-items:center}
+    .color-actions input[type=color]{
+      width:34px;height:34px;padding:0;border:0;background:transparent;cursor:pointer;
+    }
+    .file-btn{
+      flex:1;text-align:center;font-size:.75rem;padding:8px;border-radius:10px;
+      border:1px dashed rgba(212,179,106,.35);color:var(--accent);cursor:pointer;background:rgba(212,179,106,.06);
+    }
+    .p-footer{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;padding-top:12px;border-top:1px solid var(--line)}
+    .new-card{
+      border-style:dashed;border-color:rgba(212,179,106,.28);
+      background:rgba(212,179,106,.04);
+    }
+    .new-card .p-body{display:block;border-top:0;padding:16px}
+     </style>
 </head>
 <body>
   <header>
@@ -94,7 +194,12 @@
     </section>
 
     <section class="panel" id="panel-catalog">
-      <div class="meta" style="margin-bottom:10px">Цены, наличие, товары, цвета и фото</div>
+      <div class="cat-toolbar">
+        <div>
+          <h2>Каталог витрины</h2>
+          <div class="meta">Нажми на карточку — откроется редактирование</div>
+        </div>
+      </div>
       <div class="list" id="catalog"></div>
     </section>
 
@@ -315,6 +420,23 @@
     }
 
     /* catalog */
+    function coverOf(p) {
+      return p.image || p.colors?.find((c) => c.image)?.image || "";
+    }
+    function priceRange(p) {
+      const prices = (p.configs || []).map((c) => Number(c.price) || 0).filter((n) => n > 0);
+      if (!prices.length) return "цена не задана";
+      const min = Math.min(...prices);
+      const max = Math.max(...prices);
+      return min === max ? `от ${min} BYN` : `${min}–${max} BYN`;
+    }
+    function stockLabel(p) {
+      const configs = p.configs || [];
+      if (!configs.length) return "нет конфигов";
+      const n = configs.filter((c) => c.in_stock).length;
+      return n === configs.length ? "в наличии" : n === 0 ? "нет в наличии" : `${n}/${configs.length} в наличии`;
+    }
+
     async function loadCatalog() {
       const box = $("catalog");
       box.innerHTML = `<div class="empty">Загрузка…</div>`;
@@ -323,51 +445,104 @@
         fillProductFilter();
         const products = state.catalog.products || [];
         box.innerHTML = products.map((p) => {
+          const cover = coverOf(p);
           const configs = (p.configs || []).map((c) => `
-            <div class="cfg-row" data-pid="${p.id}" data-cid="${c.id}">
-              <span style="min-width:70px">${c.storage}</span>
+            <div class="price-tile" data-pid="${escapeAttr(p.id)}" data-cid="${escapeAttr(c.id)}">
+              <span class="stor">${escapeHtml(c.storage)}</span>
               <input type="number" data-price value="${c.price || 0}" />
-              <label style="display:flex;gap:6px;align-items:center;font-size:.85rem;color:var(--muted)">
+              <label class="stock">
                 <input type="checkbox" data-stock ${c.in_stock ? "checked" : ""} /> в наличии
               </label>
-              <button type="button" data-save-cfg>OK</button>
+              <button type="button" data-save-cfg title="Сохранить">OK</button>
             </div>`).join("");
           const colors = (p.colors || []).map((c) => `
-            <div class="cfg-row" data-pid="${p.id}" data-color="${c.id}">
-              ${c.image ? `<img class="thumb" src="${c.image}" alt="" />` : `<div class="thumb"></div>`}
-              <span style="min-width:80px">${c.name}</span>
-              <input type="color" data-hex value="${(c.hex || "#888888")}" title="цвет" />
-              <label class="ghost" style="font-size:.8rem;cursor:pointer">
-                фото<input type="file" accept="image/*" data-upload hidden />
-              </label>
+            <div class="color-tile" data-pid="${escapeAttr(p.id)}" data-color="${escapeAttr(c.id)}">
+              <div class="color-preview">
+                ${c.image
+                  ? `<img src="${escapeAttr(c.image)}" alt="" />`
+                  : `<div class="swatch-fallback" style="background:${escapeAttr(c.hex || "#888")}"></div>`}
+              </div>
+              <div class="color-meta">
+                <div class="name">${escapeHtml(c.name)}</div>
+                <div class="color-actions">
+                  <input type="color" data-hex value="${escapeAttr(c.hex || "#888888")}" title="цвет" />
+                  <label class="file-btn">фото<input type="file" accept="image/*" data-upload hidden /></label>
+                </div>
+              </div>
             </div>`).join("");
-          return `<article class="card prod-block" data-product="${p.id}">
-            <div class="card-top">
-              <h2>${p.name}</h2>
-              <button type="button" class="danger" data-del-prod="${p.id}">Удалить</button>
+          return `<article class="p-card" data-product="${escapeAttr(p.id)}">
+            <div class="p-head" data-toggle>
+              <div class="p-cover">${cover ? `<img src="${escapeAttr(cover)}" alt="" />` : `<span class="ph">нет фото</span>`}</div>
+              <div>
+                <h3 class="p-title">${escapeHtml(p.name)}</h3>
+                <p class="p-sub">${escapeHtml(p.gift || "без подарка")} · ${escapeHtml(p.id)}</p>
+                <div class="p-price">${escapeHtml(priceRange(p))}</div>
+                <div class="p-badges">
+                  ${p.badge ? `<span class="p-pill">${escapeHtml(p.badge)}</span>` : ""}
+                  <span class="p-pill dim">${escapeHtml(stockLabel(p))}</span>
+                  <span class="p-pill dim">${(p.colors || []).length} цв.</span>
+                </div>
+              </div>
+              <div class="p-chev" aria-hidden="true">▾</div>
             </div>
-            <div class="muted">id: ${p.id} · ${p.badge || "без бейджа"} · ${p.gift || ""}</div>
-            <div class="cfg-row">
-              <input data-field="name" value="${p.name || ""}" style="flex:1" />
-              <input data-field="badge" placeholder="бейдж" value="${p.badge || ""}" style="width:120px" />
+            <div class="p-body">
+              <div class="p-section">
+                <div class="p-section-title">Основное</div>
+                <div class="field-grid two">
+                  <div class="field">
+                    <label>Название</label>
+                    <input data-field="name" value="${escapeAttr(p.name || "")}" />
+                  </div>
+                  <div class="field">
+                    <label>Бейдж</label>
+                    <input data-field="badge" placeholder="Хит" value="${escapeAttr(p.badge || "")}" />
+                  </div>
+                </div>
+                <div class="field" style="margin-top:10px">
+                  <label>Подарок / подзаголовок</label>
+                  <input data-field="gift" value="${escapeAttr(p.gift || "")}" />
+                </div>
+                <div class="field" style="margin-top:10px">
+                  <label>Заметка</label>
+                  <textarea data-field="note">${escapeHtml(p.note || "")}</textarea>
+                </div>
+              </div>
+              <div class="p-section">
+                <div class="p-section-title">Конфиги / цены</div>
+                <div class="price-grid">${configs || `<div class="muted">Нет конфигов</div>`}</div>
+              </div>
+              <div class="p-section">
+                <div class="p-section-title">Цвета / фото</div>
+                <div class="color-grid">${colors || `<div class="muted">Нет цветов</div>`}</div>
+              </div>
+              <div class="p-footer">
+                <button type="button" class="primary" data-save-prod="${escapeAttr(p.id)}">Сохранить товар</button>
+                <button type="button" class="danger" data-del-prod="${escapeAttr(p.id)}">Удалить</button>
+              </div>
             </div>
-            <input data-field="gift" placeholder="подарок" value="${p.gift || ""}" style="width:100%;margin:6px 0" />
-            <textarea data-field="note" placeholder="заметка">${p.note || ""}</textarea>
-            <button type="button" class="primary" data-save-prod="${p.id}" style="margin-top:8px">Сохранить товар</button>
-            <h3 style="font-size:.9rem;margin:14px 0 6px">Конфиги / цены</h3>
-            ${configs}
-            <h3 style="font-size:.9rem;margin:14px 0 6px">Цвета / фото</h3>
-            ${colors}
           </article>`;
         }).join("") + `
-          <article class="card">
-            <h2 style="margin:0 0 8px;font-size:1rem">Новый товар</h2>
-            <div class="cfg-row">
-              <input id="new-id" placeholder="id (iphone-18)" style="flex:1" />
-              <input id="new-name" placeholder="Название" style="flex:1" />
-              <select id="new-cat">${(state.catalog.categories||[]).map(c=>`<option value="${c.id}">${c.title}</option>`).join("")}</select>
+          <article class="p-card new-card">
+            <div class="p-body">
+              <div class="p-section-title">Новый товар</div>
+              <div class="field-grid two" style="margin-top:10px">
+                <div class="field">
+                  <label>ID</label>
+                  <input id="new-id" placeholder="iphone-18" />
+                </div>
+                <div class="field">
+                  <label>Категория</label>
+                  <select id="new-cat">${(state.catalog.categories||[]).map(c=>`<option value="${escapeAttr(c.id)}">${escapeHtml(c.title)}</option>`).join("")}</select>
+                </div>
+              </div>
+              <div class="field" style="margin-top:10px">
+                <label>Название</label>
+                <input id="new-name" placeholder="iPhone 18" />
+              </div>
+              <div class="p-footer">
+                <button type="button" class="primary" id="new-prod">Добавить товар</button>
+              </div>
             </div>
-            <button type="button" class="primary" id="new-prod">Добавить</button>
           </article>`;
       } catch (ex) {
         box.innerHTML = `<div class="error">${ex.message}</div>`;
@@ -375,12 +550,17 @@
     }
 
     $("catalog").addEventListener("click", async (e) => {
+      const toggle = e.target.closest("[data-toggle]");
+      if (toggle && !e.target.closest("button, a, input, label")) {
+        toggle.closest(".p-card")?.classList.toggle("open");
+        return;
+      }
       const saveCfg = e.target.closest("[data-save-cfg]");
       const saveProd = e.target.closest("[data-save-prod]");
       const delProd = e.target.closest("[data-del-prod]");
       try {
         if (saveCfg) {
-          const row = saveCfg.closest(".cfg-row");
+          const row = saveCfg.closest(".price-tile");
           await api(`/api/catalog/product/${row.dataset.pid}/config/${row.dataset.cid}`, {
             method: "PATCH",
             body: JSON.stringify({
@@ -391,7 +571,7 @@
           toast("Цена/наличие сохранены");
         }
         if (saveProd) {
-          const card = saveProd.closest(".card");
+          const card = saveProd.closest(".p-card");
           const id = saveProd.dataset.saveProd;
           const product = (state.catalog.products || []).find((p) => p.id === id);
           const body = {
@@ -410,7 +590,7 @@
           toast("Удалено");
           loadCatalog();
         }
-        if (e.target.id === "new-prod") {
+        if (e.target.id === "new-prod" || e.target.closest("#new-prod")) {
           const id = $("new-id").value.trim();
           const name = $("new-name").value.trim();
           if (!id || !name) return toast("id и название");
@@ -434,7 +614,7 @@
       const hex = e.target.closest("[data-hex]");
       try {
         if (fileInput && fileInput.files?.[0]) {
-          const row = fileInput.closest(".cfg-row");
+          const row = fileInput.closest(".color-tile");
           const file = fileInput.files[0];
           const dataUrl = await new Promise((resolve, reject) => {
             const r = new FileReader();
@@ -455,7 +635,7 @@
           loadCatalog();
         }
         if (hex) {
-          const row = hex.closest(".cfg-row");
+          const row = hex.closest(".color-tile");
           await api(`/api/catalog/product/${row.dataset.pid}/color/${row.dataset.color}`, {
             method: "PATCH",
             body: JSON.stringify({ hex: hex.value }),
