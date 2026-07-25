@@ -4,321 +4,596 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex,nofollow" />
-  <title>Заявки — КнязьMobile</title>
+  <title>Админка — КнязьMobile</title>
   <style>
     :root {
-      --bg: #12110f;
-      --card: #1c1a17;
-      --text: #f4f1ea;
-      --muted: #9a9488;
-      --accent: #d4b36a;
-      --line: rgba(255,255,255,0.08);
-      --ok: #6a9f7a;
-      --warn: #c9a24d;
-      --bad: #c45c5c;
-      --info: #6a8fb8;
+      --bg:#12110f; --card:#1c1a17; --text:#f4f1ea; --muted:#9a9488; --accent:#d4b36a;
+      --line:rgba(255,255,255,.08); --ok:#6a9f7a; --warn:#c9a24d; --bad:#c45c5c; --info:#6a8fb8;
     }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: "Segoe UI", system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-    }
-    header {
-      position: sticky;
-      top: 0;
-      z-index: 5;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 16px;
-      background: rgba(18,17,15,0.92);
-      border-bottom: 1px solid var(--line);
-      backdrop-filter: blur(8px);
-    }
-    header h1 {
-      margin: 0;
-      font-size: 1.05rem;
-      font-weight: 600;
-    }
-    header .meta { color: var(--muted); font-size: 0.85rem; }
-    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
-    button, select, input {
-      font: inherit;
-      color: var(--text);
-      background: #171511;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      padding: 8px 12px;
-    }
-    button { cursor: pointer; }
-    button.primary {
-      background: var(--accent);
-      color: #1a150c;
-      border-color: transparent;
-      font-weight: 600;
-    }
-    button.ghost { background: transparent; }
-    main { padding: 16px; max-width: 960px; margin: 0 auto; }
-    .toolbar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 14px;
-    }
-    .toolbar input { flex: 1 1 180px; min-width: 140px; }
-    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-    .chip {
-      border-radius: 999px;
-      padding: 6px 12px;
-      font-size: 0.8rem;
-      border: 1px solid var(--line);
-      background: transparent;
-      color: var(--muted);
-    }
-    .chip.active {
-      color: #1a150c;
-      background: var(--accent);
-      border-color: transparent;
-      font-weight: 600;
-    }
-    .list { display: grid; gap: 10px; }
-    .card {
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 14px;
-    }
-    .card-top {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      align-items: flex-start;
-      margin-bottom: 8px;
-    }
-    .card h2 {
-      margin: 0;
-      font-size: 1rem;
-      font-weight: 600;
-    }
-    .badge {
-      font-size: 0.72rem;
-      padding: 4px 8px;
-      border-radius: 999px;
-      white-space: nowrap;
-      font-weight: 600;
-    }
-    .badge.new { background: rgba(201,162,77,0.2); color: var(--warn); }
-    .badge.in_progress { background: rgba(106,143,184,0.2); color: var(--info); }
-    .badge.done { background: rgba(106,159,122,0.2); color: var(--ok); }
-    .badge.cancelled { background: rgba(196,92,92,0.2); color: var(--bad); }
-    .row { color: var(--muted); font-size: 0.88rem; margin: 4px 0; }
-    .row strong { color: var(--text); font-weight: 500; }
-    .phone { font-family: ui-monospace, Consolas, monospace; }
-    .card-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 12px;
-    }
-    .card-actions button { font-size: 0.8rem; padding: 6px 10px; }
-    .empty, .error {
-      text-align: center;
-      color: var(--muted);
-      padding: 40px 16px;
-    }
-    .error { color: var(--bad); }
-    a.tel { color: var(--accent); text-decoration: none; }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+    header{position:sticky;top:0;z-index:5;padding:12px 16px;background:rgba(18,17,15,.94);border-bottom:1px solid var(--line);backdrop-filter:blur(8px)}
+    header .top{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+    h1{margin:0;font-size:1.05rem}
+    .meta{color:var(--muted);font-size:.82rem}
+    .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+    .tab{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:6px 12px;cursor:pointer;font:inherit}
+    .tab.active{background:var(--accent);color:#1a150c;border-color:transparent;font-weight:600}
+    main{padding:16px;max-width:980px;margin:0 auto}
+    .panel{display:none}.panel.active{display:block}
+    .toolbar,.row-flex{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center}
+    input,select,textarea,button{font:inherit;color:var(--text);background:#171511;border:1px solid var(--line);border-radius:10px;padding:8px 12px}
+    textarea{width:100%;min-height:72px;resize:vertical}
+    button{cursor:pointer}
+    button.primary{background:var(--accent);color:#1a150c;border-color:transparent;font-weight:600}
+    button.ghost{background:transparent}
+    button.danger{color:var(--bad)}
+    .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+    .chip{border-radius:999px;padding:6px 12px;font-size:.8rem;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer}
+    .chip.active{background:var(--accent);color:#1a150c;border-color:transparent;font-weight:600}
+    .list{display:grid;gap:10px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+    .card-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+    .card h2{margin:0;font-size:1rem}
+    .badge{font-size:.72rem;padding:4px 8px;border-radius:999px;font-weight:600;white-space:nowrap}
+    .badge.new{background:rgba(201,162,77,.2);color:var(--warn)}
+    .badge.in_progress{background:rgba(106,143,184,.2);color:var(--info)}
+    .badge.done{background:rgba(106,159,122,.2);color:var(--ok)}
+    .badge.cancelled{background:rgba(196,92,92,.2);color:var(--bad)}
+    .muted{color:var(--muted);font-size:.88rem;margin:4px 0}
+    .actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+    .actions button,.actions a{font-size:.78rem;padding:6px 10px;text-decoration:none;color:inherit;display:inline-flex;align-items:center}
+    a.btn{border:1px solid var(--line);border-radius:10px;background:#171511}
+    .empty,.error{text-align:center;padding:32px 12px;color:var(--muted)}
+    .error{color:var(--bad)}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}
+    .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+    .stat b{display:block;font-size:1.4rem;margin-top:4px}
+    .prod-block{margin-bottom:14px}
+    .cfg-row,.mgr-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px 0}
+    .cfg-row input[type=number]{width:100px}
+    .thumb{width:48px;height:48px;object-fit:contain;border-radius:8px;background:#111;border:1px solid var(--line)}
+    .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#2a261f;border:1px solid var(--line);padding:10px 16px;border-radius:12px;z-index:20;display:none}
+    .hidden{display:none!important}
   </style>
 </head>
 <body>
   <header>
-    <div>
-      <h1>Заявки</h1>
-      <div class="meta" id="meta">Загрузка…</div>
+    <div class="top">
+      <div>
+        <h1>КнязьMobile · админка</h1>
+        <div class="meta" id="who">…</div>
+      </div>
+      <div class="row-flex" style="margin:0">
+        <button type="button" class="ghost" id="logout">Выйти</button>
+      </div>
     </div>
-    <div class="actions">
-      <button type="button" class="ghost" id="refresh">Обновить</button>
-      <button type="button" class="ghost" id="logout">Выйти</button>
+    <div class="tabs" id="tabs">
+      <button type="button" class="tab active" data-tab="orders">Заявки</button>
+      <button type="button" class="tab" data-tab="catalog">Каталог</button>
+      <button type="button" class="tab" data-tab="stats">Статистика</button>
+      <button type="button" class="tab" data-tab="faq">Шаблоны</button>
+      <button type="button" class="tab" data-tab="managers">Менеджеры</button>
     </div>
   </header>
   <main>
-    <div class="toolbar">
-      <input id="q" type="search" placeholder="Телефон, товар, имя…" />
-      <button type="button" class="primary" id="search">Найти</button>
-    </div>
-    <div class="chips" id="status-chips"></div>
-    <div class="list" id="list" style="margin-top:14px"></div>
+    <section class="panel active" id="panel-orders">
+      <div class="toolbar">
+        <input id="q" type="search" placeholder="Телефон, товар, заметка…" style="flex:1;min-width:160px" />
+        <select id="period">
+          <option value="">Всё время</option>
+          <option value="today">Сегодня</option>
+          <option value="week">7 дней</option>
+        </select>
+        <select id="product-filter"><option value="">Все товары</option></select>
+        <button type="button" class="primary" id="search">Найти</button>
+        <button type="button" class="ghost" id="export">CSV</button>
+      </div>
+      <div class="chips" id="status-chips"></div>
+      <div class="list" id="orders"></div>
+    </section>
+
+    <section class="panel" id="panel-catalog">
+      <div class="meta" style="margin-bottom:10px">Цены, наличие, товары, цвета и фото</div>
+      <div class="list" id="catalog"></div>
+    </section>
+
+    <section class="panel" id="panel-stats">
+      <div class="stats" id="stats-cards"></div>
+      <div class="card"><h2 style="margin:0 0 8px;font-size:1rem">Топ моделей</h2><div id="stats-top" class="muted">—</div></div>
+    </section>
+
+    <section class="panel" id="panel-faq">
+      <div class="toolbar">
+        <button type="button" class="primary" id="faq-add">+ Шаблон</button>
+      </div>
+      <div class="list" id="faq-list"></div>
+    </section>
+
+    <section class="panel" id="panel-managers">
+      <p class="muted">Telegram ID из @userinfobot. Эти люди могут входить через Telegram Mini App.</p>
+      <div class="list" id="mgr-list"></div>
+      <div class="toolbar">
+        <button type="button" class="primary" id="mgr-add">+ Менеджер</button>
+        <button type="button" class="ghost" id="mgr-save">Сохранить</button>
+      </div>
+    </section>
   </main>
+  <div class="toast" id="toast"></div>
+
   <script>
-    const STATUS_LABELS = {
-      new: "Новая",
-      in_progress: "В работе",
-      done: "Готово",
-      cancelled: "Отмена",
-    };
-    const state = { status: "new", q: "", statuses: Object.keys(STATUS_LABELS) };
-    const els = {
-      list: document.getElementById("list"),
-      meta: document.getElementById("meta"),
-      chips: document.getElementById("status-chips"),
-      q: document.getElementById("q"),
+    const STATUS_LABELS = { new:"Новая", in_progress:"В работе", done:"Готово", cancelled:"Отмена" };
+    const state = {
+      tab: "orders",
+      status: "new",
+      q: "",
+      period: "",
+      product_id: "",
+      statuses: Object.keys(STATUS_LABELS),
+      managers: [],
+      catalog: null,
+      me: null,
     };
 
-    function basePath() {
-      // /a/SECRET/app → /a/SECRET
-      return location.pathname.replace(/\/app\/?$/, "");
+    const $ = (id) => document.getElementById(id);
+    function basePath() { return location.pathname.replace(/\/app\/?$/, ""); }
+    function toast(msg) {
+      const el = $("toast");
+      el.textContent = msg;
+      el.style.display = "block";
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => (el.style.display = "none"), 2200);
     }
-
+    async function api(path, opts = {}) {
+      const res = await fetch(basePath() + path, {
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json", ...(opts.headers || {}) },
+        ...opts,
+      });
+      if (res.status === 401) { location.href = basePath() + "/"; throw new Error("auth"); }
+      const ct = res.headers.get("content-type") || "";
+      if (ct.includes("text/csv")) return res;
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || "Ошибка");
+      return data;
+    }
     function fmtDate(iso) {
       try {
-        return new Date(iso).toLocaleString("ru-RU", {
-          day: "2-digit", month: "2-digit", year: "2-digit",
-          hour: "2-digit", minute: "2-digit",
-        });
-      } catch (_) {
-        return iso;
-      }
+        return new Date(iso).toLocaleString("ru-RU", { day:"2-digit", month:"2-digit", year:"2-digit", hour:"2-digit", minute:"2-digit" });
+      } catch (_) { return iso; }
+    }
+    function priceText(p) {
+      if (!p || p <= 0) return "уточнит менеджер";
+      return Number(p).toLocaleString("ru-RU") + " BYN";
     }
 
-    function priceText(price) {
-      if (!price || price <= 0) return "уточнит менеджер";
-      return Number(price).toLocaleString("ru-RU") + " BYN";
-    }
+    /* tabs */
+    $("tabs").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-tab]");
+      if (!btn) return;
+      state.tab = btn.dataset.tab;
+      document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t.dataset.tab === state.tab));
+      document.querySelectorAll(".panel").forEach((p) => p.classList.toggle("active", p.id === "panel-" + state.tab));
+      if (state.tab === "orders") loadOrders();
+      if (state.tab === "catalog") loadCatalog();
+      if (state.tab === "stats") loadStats();
+      if (state.tab === "faq") loadFaq();
+      if (state.tab === "managers") loadManagers();
+    });
 
-    function renderChips() {
-      const all = [{ id: "", title: "Все" }].concat(
-        state.statuses.map((id) => ({ id, title: STATUS_LABELS[id] || id }))
-      );
-      els.chips.innerHTML = all
-        .map(
-          (c) =>
-            `<button type="button" class="chip ${state.status === c.id ? "active" : ""}" data-status="${c.id}">${c.title}</button>`
-        )
-        .join("");
+    /* orders */
+    function renderStatusChips() {
+      const all = [{ id: "", title: "Все" }].concat(state.statuses.map((id) => ({ id, title: STATUS_LABELS[id] || id })));
+      $("status-chips").innerHTML = all.map((c) =>
+        `<button type="button" class="chip ${state.status === c.id ? "active" : ""}" data-status="${c.id}">${c.title}</button>`
+      ).join("");
     }
+    $("status-chips").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-status]");
+      if (!b) return;
+      state.status = b.dataset.status;
+      renderStatusChips();
+      loadOrders();
+    });
 
-    function renderOrders(items, total) {
-      els.meta.textContent = total ? `Показано ${items.length} из ${total}` : "Пусто";
-      if (!items.length) {
-        els.list.innerHTML = `<div class="empty">Заявок нет</div>`;
-        return;
-      }
-      els.list.innerHTML = items
-        .map((o) => {
-          const st = o.status || "new";
-          const tg = o.telegram_username
-            ? `@${o.telegram_username}`
-            : o.telegram_full_name || "—";
-          const buttons = state.statuses
-            .filter((s) => s !== st)
-            .map(
-              (s) =>
-                `<button type="button" data-id="${o.id}" data-set="${s}">${STATUS_LABELS[s] || s}</button>`
-            )
-            .join("");
-          return `
-            <article class="card">
-              <div class="card-top">
-                <h2>#${o.id} · ${o.product_name || "—"}</h2>
-                <span class="badge ${st}">${STATUS_LABELS[st] || st}</span>
-              </div>
-              <div class="row">${o.color_name || "—"} · ${o.storage || "—"} · <strong>${priceText(o.price)}</strong></div>
-              <div class="row">Оплата: ${o.payment_title || "—"}</div>
-              <div class="row">Телефон: <a class="tel phone" href="tel:${o.phone}">${o.phone}</a></div>
-              <div class="row">Клиент: ${tg}</div>
-              <div class="row">${fmtDate(o.created_at)}</div>
-              <div class="card-actions">${buttons}</div>
-            </article>`;
-        })
-        .join("");
-    }
-
-    async function load() {
-      els.list.innerHTML = `<div class="empty">Загрузка…</div>`;
+    async function loadOrders() {
+      const box = $("orders");
+      box.innerHTML = `<div class="empty">Загрузка…</div>`;
       const params = new URLSearchParams();
       if (state.status) params.set("status", state.status);
       if (state.q) params.set("q", state.q);
-      params.set("limit", "80");
+      if (state.period) params.set("period", state.period);
+      if (state.product_id) params.set("product_id", state.product_id);
+      params.set("limit", "100");
       try {
-        const res = await fetch(`${basePath()}/api/orders?${params}`, {
-          credentials: "same-origin",
+        const data = await api("/api/orders?" + params);
+        state.statuses = data.statuses || state.statuses;
+        state.managers = data.managers || state.managers;
+        renderStatusChips();
+        fillProductFilter();
+        const items = data.items || [];
+        $("who").textContent = `${state.me?.name || "Админ"} · заявок: ${data.total || 0}`;
+        if (!items.length) { box.innerHTML = `<div class="empty">Заявок нет</div>`; return; }
+        box.innerHTML = items.map((o) => {
+          const st = o.status || "new";
+          const tgLink = o.telegram_username
+            ? `https://t.me/${o.telegram_username}`
+            : o.telegram_user_id
+              ? `tg://user?id=${o.telegram_user_id}`
+              : null;
+          const mgrOpts = [`<option value="">—</option>`]
+            .concat(state.managers.map((m) =>
+              `<option value="${m.telegram_id}" ${Number(o.assigned_to) === Number(m.telegram_id) ? "selected" : ""}>${m.name}</option>`
+            )).join("");
+          const statusBtns = state.statuses.filter((s) => s !== st).map((s) =>
+            `<button type="button" data-patch="${o.id}" data-status="${s}">${STATUS_LABELS[s]}</button>`
+          ).join("");
+          return `<article class="card" data-order="${o.id}">
+            <div class="card-top">
+              <h2>#${o.id} · ${o.product_name || "—"}</h2>
+              <span class="badge ${st}">${STATUS_LABELS[st] || st}</span>
+            </div>
+            <div class="muted">${o.color_name || "—"} · ${o.storage || "—"} · <b style="color:var(--text)">${priceText(o.price)}</b> · ${o.payment_title || ""}</div>
+            <div class="muted">📞 <a href="tel:${o.phone}" style="color:var(--accent)">${o.phone}</a>
+              ${tgLink ? ` · <a href="${tgLink}" target="_blank" rel="noopener" style="color:var(--accent)">Написать в TG</a>` : ""}</div>
+            <div class="muted">${o.telegram_full_name || "—"} ${o.telegram_username ? "@"+o.telegram_username : ""} · ${fmtDate(o.created_at)}</div>
+            <div class="muted">Ответственный: ${o.assigned_name || "не назначен"}</div>
+            <label class="muted">Заметка</label>
+            <textarea data-note="${o.id}">${o.manager_note || ""}</textarea>
+            <div class="actions">
+              <button type="button" class="primary" data-take="${o.id}">Взять</button>
+              <button type="button" data-save-note="${o.id}">Сохранить заметку</button>
+              <select data-assign="${o.id}">${mgrOpts}</select>
+              ${statusBtns}
+              <a class="btn" href="tel:${o.phone}">Позвонить</a>
+            </div>
+          </article>`;
+        }).join("");
+      } catch (ex) {
+        if (ex.message !== "auth") box.innerHTML = `<div class="error">${ex.message}</div>`;
+      }
+    }
+
+    $("orders").addEventListener("click", async (e) => {
+      const take = e.target.closest("[data-take]");
+      const patch = e.target.closest("[data-patch]");
+      const saveNote = e.target.closest("[data-save-note]");
+      try {
+        if (take) {
+          await api("/api/orders/" + take.dataset.take, { method: "PATCH", body: JSON.stringify({ take: true }) });
+          toast("Заявка взята");
+          loadOrders();
+        }
+        if (patch) {
+          await api("/api/orders/" + patch.dataset.patch, { method: "PATCH", body: JSON.stringify({ status: patch.dataset.status }) });
+          toast("Статус обновлён");
+          loadOrders();
+        }
+        if (saveNote) {
+          const id = saveNote.dataset.saveNote;
+          const note = document.querySelector(`textarea[data-note="${id}"]`)?.value || "";
+          await api("/api/orders/" + id, { method: "PATCH", body: JSON.stringify({ manager_note: note }) });
+          toast("Заметка сохранена");
+        }
+      } catch (ex) { toast(ex.message); }
+    });
+    $("orders").addEventListener("change", async (e) => {
+      const sel = e.target.closest("[data-assign]");
+      if (!sel || !sel.value) return;
+      try {
+        await api("/api/orders/" + sel.dataset.assign, {
+          method: "PATCH",
+          body: JSON.stringify({ assigned_to: Number(sel.value) }),
         });
-        if (res.status === 401) {
-          location.href = basePath() + "/";
-          return;
-        }
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || "Ошибка");
-        if (Array.isArray(data.statuses) && data.statuses.length) {
-          state.statuses = data.statuses;
-        }
-        renderChips();
-        renderOrders(data.items || [], data.total || 0);
-      } catch (ex) {
-        els.list.innerHTML = `<div class="error">${ex.message || "Ошибка загрузки"}</div>`;
-        els.meta.textContent = "Ошибка";
-      }
-    }
-
-    async function setStatus(id, status) {
-      const res = await fetch(`${basePath()}/api/orders/${id}`, {
-        method: "PATCH",
-        credentials: "same-origin",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
-      if (res.status === 401) {
-        location.href = basePath() + "/";
-        return;
-      }
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.detail || "Не удалось обновить");
-      await load();
-    }
-
-    els.chips.addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-status]");
-      if (!btn) return;
-      state.status = btn.dataset.status;
-      renderChips();
-      load();
+        toast("Назначено");
+        loadOrders();
+      } catch (ex) { toast(ex.message); }
     });
 
-    els.list.addEventListener("click", async (e) => {
-      const btn = e.target.closest("[data-set]");
-      if (!btn) return;
-      btn.disabled = true;
+    $("search").onclick = () => {
+      state.q = $("q").value.trim();
+      state.period = $("period").value;
+      state.product_id = $("product-filter").value;
+      loadOrders();
+    };
+    $("export").onclick = () => {
+      const params = new URLSearchParams();
+      if (state.status) params.set("status", state.status);
+      if (state.q) params.set("q", state.q);
+      if (state.period) params.set("period", state.period);
+      if (state.product_id) params.set("product_id", state.product_id);
+      location.href = basePath() + "/api/orders.csv?" + params;
+    };
+
+    function fillProductFilter() {
+      const sel = $("product-filter");
+      const cur = state.product_id;
+      const products = state.catalog?.products || [];
+      sel.innerHTML = `<option value="">Все товары</option>` + products.map((p) =>
+        `<option value="${p.id}" ${p.id === cur ? "selected" : ""}>${p.name}</option>`
+      ).join("");
+    }
+
+    /* catalog */
+    async function loadCatalog() {
+      const box = $("catalog");
+      box.innerHTML = `<div class="empty">Загрузка…</div>`;
       try {
-        await setStatus(btn.dataset.id, btn.dataset.set);
+        state.catalog = await api("/api/catalog");
+        fillProductFilter();
+        const products = state.catalog.products || [];
+        box.innerHTML = products.map((p) => {
+          const configs = (p.configs || []).map((c) => `
+            <div class="cfg-row" data-pid="${p.id}" data-cid="${c.id}">
+              <span style="min-width:70px">${c.storage}</span>
+              <input type="number" data-price value="${c.price || 0}" />
+              <label style="display:flex;gap:6px;align-items:center;font-size:.85rem;color:var(--muted)">
+                <input type="checkbox" data-stock ${c.in_stock ? "checked" : ""} /> в наличии
+              </label>
+              <button type="button" data-save-cfg>OK</button>
+            </div>`).join("");
+          const colors = (p.colors || []).map((c) => `
+            <div class="cfg-row" data-pid="${p.id}" data-color="${c.id}">
+              ${c.image ? `<img class="thumb" src="${c.image}" alt="" />` : `<div class="thumb"></div>`}
+              <span style="min-width:80px">${c.name}</span>
+              <input type="color" data-hex value="${(c.hex || "#888888")}" title="цвет" />
+              <label class="ghost" style="font-size:.8rem;cursor:pointer">
+                фото<input type="file" accept="image/*" data-upload hidden />
+              </label>
+            </div>`).join("");
+          return `<article class="card prod-block" data-product="${p.id}">
+            <div class="card-top">
+              <h2>${p.name}</h2>
+              <button type="button" class="danger" data-del-prod="${p.id}">Удалить</button>
+            </div>
+            <div class="muted">id: ${p.id} · ${p.badge || "без бейджа"} · ${p.gift || ""}</div>
+            <div class="cfg-row">
+              <input data-field="name" value="${p.name || ""}" style="flex:1" />
+              <input data-field="badge" placeholder="бейдж" value="${p.badge || ""}" style="width:120px" />
+            </div>
+            <input data-field="gift" placeholder="подарок" value="${p.gift || ""}" style="width:100%;margin:6px 0" />
+            <textarea data-field="note" placeholder="заметка">${p.note || ""}</textarea>
+            <button type="button" class="primary" data-save-prod="${p.id}" style="margin-top:8px">Сохранить товар</button>
+            <h3 style="font-size:.9rem;margin:14px 0 6px">Конфиги / цены</h3>
+            ${configs}
+            <h3 style="font-size:.9rem;margin:14px 0 6px">Цвета / фото</h3>
+            ${colors}
+          </article>`;
+        }).join("") + `
+          <article class="card">
+            <h2 style="margin:0 0 8px;font-size:1rem">Новый товар</h2>
+            <div class="cfg-row">
+              <input id="new-id" placeholder="id (iphone-18)" style="flex:1" />
+              <input id="new-name" placeholder="Название" style="flex:1" />
+              <select id="new-cat">${(state.catalog.categories||[]).map(c=>`<option value="${c.id}">${c.title}</option>`).join("")}</select>
+            </div>
+            <button type="button" class="primary" id="new-prod">Добавить</button>
+          </article>`;
       } catch (ex) {
-        alert(ex.message || "Ошибка");
-        btn.disabled = false;
+        box.innerHTML = `<div class="error">${ex.message}</div>`;
       }
+    }
+
+    $("catalog").addEventListener("click", async (e) => {
+      const saveCfg = e.target.closest("[data-save-cfg]");
+      const saveProd = e.target.closest("[data-save-prod]");
+      const delProd = e.target.closest("[data-del-prod]");
+      try {
+        if (saveCfg) {
+          const row = saveCfg.closest(".cfg-row");
+          await api(`/api/catalog/product/${row.dataset.pid}/config/${row.dataset.cid}`, {
+            method: "PATCH",
+            body: JSON.stringify({
+              price: Number(row.querySelector("[data-price]").value),
+              in_stock: row.querySelector("[data-stock]").checked,
+            }),
+          });
+          toast("Цена/наличие сохранены");
+        }
+        if (saveProd) {
+          const card = saveProd.closest(".card");
+          const id = saveProd.dataset.saveProd;
+          const product = (state.catalog.products || []).find((p) => p.id === id);
+          const body = {
+            ...product,
+            name: card.querySelector('[data-field="name"]').value,
+            badge: card.querySelector('[data-field="badge"]').value || null,
+            gift: card.querySelector('[data-field="gift"]').value || null,
+            note: card.querySelector('[data-field="note"]').value || null,
+          };
+          await api("/api/catalog/product", { method: "PUT", body: JSON.stringify(body) });
+          toast("Товар сохранён");
+          loadCatalog();
+        }
+        if (delProd && confirm("Удалить товар?")) {
+          await api("/api/catalog/product/" + delProd.dataset.delProd, { method: "DELETE" });
+          toast("Удалено");
+          loadCatalog();
+        }
+        if (e.target.id === "new-prod") {
+          const id = $("new-id").value.trim();
+          const name = $("new-name").value.trim();
+          if (!id || !name) return toast("id и название");
+          await api("/api/catalog/product", {
+            method: "PUT",
+            body: JSON.stringify({
+              id, name, category: $("new-cat").value,
+              colors: [{ id: "default", name: "Default", hex: "#888888", image: null }],
+              configs: [{ id: "256", storage: "256GB", price: 0, in_stock: true }],
+              image: null,
+            }),
+          });
+          toast("Добавлено");
+          loadCatalog();
+        }
+      } catch (ex) { toast(ex.message); }
     });
 
-    document.getElementById("search").addEventListener("click", () => {
-      state.q = els.q.value.trim();
-      load();
+    $("catalog").addEventListener("change", async (e) => {
+      const fileInput = e.target.closest("[data-upload]");
+      const hex = e.target.closest("[data-hex]");
+      try {
+        if (fileInput && fileInput.files?.[0]) {
+          const row = fileInput.closest(".cfg-row");
+          const file = fileInput.files[0];
+          const dataUrl = await new Promise((resolve, reject) => {
+            const r = new FileReader();
+            r.onload = () => resolve(r.result);
+            r.onerror = reject;
+            r.readAsDataURL(file);
+          });
+          await api("/api/catalog/upload", {
+            method: "POST",
+            body: JSON.stringify({
+              data: dataUrl,
+              filename: file.name,
+              product_id: row.dataset.pid,
+              color_id: row.dataset.color,
+            }),
+          });
+          toast("Фото загружено");
+          loadCatalog();
+        }
+        if (hex) {
+          const row = hex.closest(".cfg-row");
+          await api(`/api/catalog/product/${row.dataset.pid}/color/${row.dataset.color}`, {
+            method: "PATCH",
+            body: JSON.stringify({ hex: hex.value }),
+          });
+          toast("Цвет обновлён");
+        }
+      } catch (ex) { toast(ex.message); }
     });
-    els.q.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        state.q = els.q.value.trim();
-        load();
+
+    /* stats */
+    async function loadStats() {
+      try {
+        const s = await api("/api/stats");
+        $("stats-cards").innerHTML = `
+          <div class="stat">Всего<b>${s.total}</b></div>
+          <div class="stat">Сегодня<b>${s.today}</b></div>
+          <div class="stat">7 дней<b>${s.week}</b></div>
+          <div class="stat">Новые<b>${s.by_status?.new || 0}</b></div>
+          <div class="stat">В работе<b>${s.by_status?.in_progress || 0}</b></div>
+          <div class="stat">Готово<b>${s.by_status?.done || 0}</b></div>`;
+        $("stats-top").innerHTML = (s.top_products || []).length
+          ? s.top_products.map((p) => `<div>${p.product_name}: <b>${p.n}</b></div>`).join("")
+          : "Пока нет данных";
+      } catch (ex) {
+        $("stats-cards").innerHTML = `<div class="error">${ex.message}</div>`;
       }
+    }
+
+    /* faq */
+    async function loadFaq() {
+      const box = $("faq-list");
+      try {
+        const data = await api("/api/faq");
+        const items = data.items || [];
+        box.innerHTML = items.map((f) => `
+          <article class="card" data-faq="${f.id}">
+            <input data-ftitle value="${escapeAttr(f.title)}" style="width:100%;margin-bottom:8px" />
+            <textarea data-fbody>${escapeHtml(f.body)}</textarea>
+            <div class="actions">
+              <button type="button" class="primary" data-faq-save="${f.id}">Сохранить</button>
+              <button type="button" data-faq-copy="${f.id}">Копировать текст</button>
+              <button type="button" class="danger" data-faq-del="${f.id}">Удалить</button>
+            </div>
+          </article>`).join("") || `<div class="empty">Нет шаблонов</div>`;
+      } catch (ex) {
+        box.innerHTML = `<div class="error">${ex.message}</div>`;
+      }
+    }
+    function escapeAttr(s) { return String(s || "").replace(/"/g, "&quot;"); }
+    function escapeHtml(s) {
+      return String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;");
+    }
+
+    $("faq-add").onclick = async () => {
+      try {
+        await api("/api/faq", { method: "POST", body: JSON.stringify({ title: "Новый шаблон", body: "Текст ответа…" }) });
+        loadFaq();
+      } catch (ex) { toast(ex.message); }
+    };
+    $("faq-list").addEventListener("click", async (e) => {
+      const save = e.target.closest("[data-faq-save]");
+      const del = e.target.closest("[data-faq-del]");
+      const copy = e.target.closest("[data-faq-copy]");
+      try {
+        if (save) {
+          const card = save.closest(".card");
+          await api("/api/faq/" + save.dataset.faqSave, {
+            method: "PUT",
+            body: JSON.stringify({
+              title: card.querySelector("[data-ftitle]").value,
+              body: card.querySelector("[data-fbody]").value,
+            }),
+          });
+          toast("Сохранено");
+        }
+        if (del && confirm("Удалить?")) {
+          await api("/api/faq/" + del.dataset.faqDel, { method: "DELETE" });
+          loadFaq();
+        }
+        if (copy) {
+          const text = copy.closest(".card").querySelector("[data-fbody]").value;
+          await navigator.clipboard.writeText(text);
+          toast("Скопировано");
+        }
+      } catch (ex) { toast(ex.message); }
     });
-    document.getElementById("refresh").addEventListener("click", load);
-    document.getElementById("logout").addEventListener("click", async () => {
-      await fetch(basePath() + "/logout", { method: "POST", credentials: "same-origin" });
+
+    /* managers */
+    async function loadManagers() {
+      const data = await api("/api/managers");
+      state.managers = data.items || [];
+      $("mgr-list").innerHTML = state.managers.map((m, i) => `
+        <div class="mgr-row card" data-i="${i}">
+          <input data-mid placeholder="Telegram ID" value="${m.telegram_id}" style="width:160px" />
+          <input data-mname placeholder="Имя" value="${escapeAttr(m.name)}" style="flex:1" />
+          <button type="button" class="danger" data-mrm>✕</button>
+        </div>`).join("") || `<div class="empty">Список пуст</div>`;
+    }
+    $("mgr-add").onclick = () => {
+      state.managers.push({ telegram_id: "", name: "" });
+      $("mgr-list").innerHTML += `
+        <div class="mgr-row card">
+          <input data-mid placeholder="Telegram ID" style="width:160px" />
+          <input data-mname placeholder="Имя" style="flex:1" />
+          <button type="button" class="danger" data-mrm>✕</button>
+        </div>`;
+    };
+    $("mgr-list").addEventListener("click", (e) => {
+      if (e.target.closest("[data-mrm]")) e.target.closest(".mgr-row")?.remove();
+    });
+    $("mgr-save").onclick = async () => {
+      const items = [...document.querySelectorAll("#mgr-list .mgr-row")].map((row) => ({
+        telegram_id: Number(row.querySelector("[data-mid]").value),
+        name: row.querySelector("[data-mname]").value.trim(),
+      }));
+      try {
+        await api("/api/managers", { method: "PUT", body: JSON.stringify({ items }) });
+        toast("Менеджеры сохранены");
+        loadManagers();
+      } catch (ex) { toast(ex.message); }
+    };
+
+    $("logout").onclick = async () => {
+      await api("/logout", { method: "POST" });
       location.href = basePath() + "/";
-    });
+    };
 
-    renderChips();
-    load();
+    async function boot() {
+      try {
+        state.me = await api("/api/me");
+        $("who").textContent = state.me.name || "Админ";
+        state.managers = state.me.managers || [];
+        try { state.catalog = await api("/api/catalog"); fillProductFilter(); } catch (_) {}
+        renderStatusChips();
+        loadOrders();
+      } catch (_) {}
+    }
+    boot();
   </script>
 </body>
 </html>
