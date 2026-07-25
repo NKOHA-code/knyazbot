@@ -128,6 +128,8 @@ function sendHtml(res, filePath) {
     res.status(404).type("text").send("Not found");
     return;
   }
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+  res.setHeader("Pragma", "no-cache");
   res.status(200).type("html").send(fs.readFileSync(filePath, "utf8"));
 }
 
