@@ -5,7 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex,nofollow" />
   <title>Админка — КнязьMobile</title>
-  <meta http-equiv="Cache-Control" content="no-cache" />
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <!-- admin-build=20260726c -->
   <style>
     :root {
       --bg:#12110f; --card:#1c1a17; --text:#f4f1ea; --muted:#9a9488; --accent:#d4b36a;
@@ -501,34 +503,43 @@
       return data;
     }
 
-    /** Downscale huge images; keep small PNG/JPG as-is (binary upload). */
+    /** Always optimize for upload: PNG→JPG, max edge, keep under ~900KB (avoids 413 on proxy). */
     async function prepareImageForUpload(file) {
-      const MAX_EDGE = 1800;
-      const KEEP_RAW_BYTES = 3 * 1024 * 1024;
+      const MAX_EDGE = 1400;
+      const TARGET_BYTES = 900 * 1024;
       const name = file.name || "photo.png";
-      if (file.size <= KEEP_RAW_BYTES) {
-        return { blob: file, filename: name };
-      }
+      const base = name.replace(/\.[^.]+$/, "") || "photo";
+
       let bitmap;
       try {
         bitmap = await createImageBitmap(file);
       } catch (_) {
+        // cannot decode (rare) — send original binary
         return { blob: file, filename: name };
       }
-      const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
-      const w = Math.max(1, Math.round(bitmap.width * scale));
-      const h = Math.max(1, Math.round(bitmap.height * scale));
-      const canvas = document.createElement("canvas");
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext("2d");
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, w, h);
-      ctx.drawImage(bitmap, 0, 0, w, h);
+
+      let scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height, 1));
+      let quality = 0.85;
+      let blob = null;
+
+      for (let attempt = 0; attempt < 6; attempt++) {
+        const w = Math.max(1, Math.round(bitmap.width * scale));
+        const h = Math.max(1, Math.round(bitmap.height * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(bitmap, 0, 0, w, h);
+        blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+        if (blob && blob.size <= TARGET_BYTES) break;
+        if (quality > 0.55) quality -= 0.1;
+        else scale *= 0.82;
+      }
       bitmap.close?.();
-      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.88));
+
       if (!blob) return { blob: file, filename: name };
-      const base = name.replace(/\.[^.]+$/, "") || "photo";
       return { blob, filename: base + ".jpg" };
     }
     function fmtDate(iso) {

@@ -123,7 +123,7 @@ function parseInitData(initData, botToken) {
 }
 
 async function startHttp(botForNotify) {
-  console.log("КнязьMobile build=2026-07-26b (binary-photo-upload)");
+  console.log("КнязьMobile build=2026-07-26c (photo-compress-bin)");
   await initDb();
   try {
     const cat = loadCatalog();

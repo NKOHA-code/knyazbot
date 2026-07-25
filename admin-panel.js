@@ -129,8 +129,9 @@ function sendHtml(res, filePath) {
     res.status(404).type("text").send("Not found");
     return;
   }
-  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
   res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
   res.status(200).type("html").send(fs.readFileSync(filePath, "utf8"));
 }
 
@@ -229,7 +230,7 @@ function mountAdmin(app) {
 
   function serveLoginPage(req, res) {
     if (readSession(parseCookies(req)[COOKIE_NAME])) {
-      res.redirect(302, `/a/${ADMIN_PATH}/app`);
+      res.redirect(302, `/a/${ADMIN_PATH}/app?v=20260726c`);
       return;
     }
     sendHtml(res, loginHtml);
@@ -248,7 +249,7 @@ function mountAdmin(app) {
       return res.status(401).json({ detail: "Неверный пароль" });
     }
     setSessionCookie(res, makeSessionCookie({ mid: ADMIN_CHAT_ID || null, name: "Админ" }));
-    return res.json({ ok: true, redirect: `/a/${ADMIN_PATH}/app` });
+    return res.json({ ok: true, redirect: `/a/${ADMIN_PATH}/app?v=20260726c` });
   });
 
   app.post("/a/:path/login/telegram", gatePath, (req, res) => {
@@ -270,7 +271,7 @@ function mountAdmin(app) {
       user.username ||
       String(user.id);
     setSessionCookie(res, makeSessionCookie({ mid: user.id, name }));
-    return res.json({ ok: true, redirect: `/a/${ADMIN_PATH}/app`, manager: { id: user.id, name } });
+    return res.json({ ok: true, redirect: `/a/${ADMIN_PATH}/app?v=20260726c`, manager: { id: user.id, name } });
   });
 
   app.post("/a/:path/logout", gatePath, (_req, res) => {
