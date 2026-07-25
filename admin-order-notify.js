@@ -49,7 +49,7 @@ function buildAdminOrderNotify(order, opts = {}) {
     `🎨 Цвет: ${escapeHtml(order.colorName || "")}\n` +
     `💾 Память: ${escapeHtml(order.storage || "")}\n` +
     `💰 Цена: ${escapeHtml(order.priceText || "")}\n` +
-    `💳 Оплата: ${escapeHtml(order.payment || "")}\n` +
+    `💳 Оплата: <b>${escapeHtml(order.payment || "не указана")}</b>\n` +
     `📞 Телефон: ${phoneHtml}\n\n` +
     `👤 ${clientLine}\n` +
     `🆔 ID: ${idHtml}`;

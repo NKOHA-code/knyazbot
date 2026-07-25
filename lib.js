@@ -174,11 +174,17 @@ async function startHttp(botForNotify) {
 
       const color = (product.colors || []).find((c) => c.id === String(body.color_id || ""));
       const config = (product.configs || []).find((c) => c.id === String(body.config_id || ""));
-      const paymentId = String(body.payment_id || "");
-      const payment = PAYMENT_TITLES[paymentId];
-      if (!color || !config || !payment) {
+      const paymentId = String(body.payment_id || "").trim();
+      const paymentsList = catalog.payments?.length ? catalog.payments : PAYMENTS;
+      const paymentRow = paymentsList.find((p) => p.id === paymentId);
+      const paymentTitle =
+        paymentRow?.title ||
+        PAYMENT_TITLES[paymentId] ||
+        "";
+      if (!color || !config || !paymentId || !paymentTitle) {
         return res.status(400).json({ detail: "Выберите цвет, память и оплату" });
       }
+      console.log("order payment", { paymentId, paymentTitle, product: product.id });
 
       let user = parseInitData(String(body.init_data || ""), BOT_TOKEN);
       if (!user && !ALLOW_INSECURE) {
@@ -200,7 +206,7 @@ async function startHttp(botForNotify) {
           storage: config.storage,
           price: config.price || 0,
           payment_id: paymentId,
-          payment_title: payment,
+          payment_title: paymentTitle,
           phone,
           telegram_user_id: userId || null,
           telegram_username: username,
@@ -218,7 +224,7 @@ async function startHttp(botForNotify) {
           colorName: color.name,
           storage: config.storage,
           priceText: priceText(config.price),
-          payment,
+          payment: paymentTitle,
           phone,
           fullName,
           username,

@@ -36,6 +36,7 @@
     colorName: document.getElementById("color-name"),
     configList: document.getElementById("config-list"),
     paymentList: document.getElementById("payment-list"),
+    paymentName: document.getElementById("payment-name"),
     detailPrice: document.getElementById("detail-price"),
     detailStock: document.getElementById("detail-stock"),
     phone: document.getElementById("phone"),
@@ -186,12 +187,14 @@
       })
       .join("");
 
-    els.paymentList.innerHTML = state.catalog.payments
+    els.paymentList.innerHTML = (state.catalog.payments || [])
       .map(
         (pay) =>
           `<button type="button" class="chip ${state.paymentId === pay.id ? "active" : ""}" data-payment="${pay.id}">${pay.title}</button>`
       )
       .join("");
+    const payTitle = (state.catalog.payments || []).find((p) => p.id === state.paymentId)?.title || "";
+    if (els.paymentName) els.paymentName.textContent = payTitle ? `Выбрано: ${payTitle}` : "Выберите способ оплаты";
 
     updatePrice();
   }
@@ -234,6 +237,12 @@
       toast("Выберите цвет и конфигурацию");
       return;
     }
+    if (!state.paymentId) {
+      toast("Выберите способ оплаты");
+      return;
+    }
+    const paymentTitle =
+      (state.catalog.payments || []).find((p) => p.id === state.paymentId)?.title || state.paymentId;
     if (phone.length < 7) {
       toast("Укажите телефон для связи");
       els.phone.focus();
@@ -251,6 +260,7 @@
           color_id: state.colorId,
           config_id: state.configId,
           payment_id: state.paymentId,
+          payment_title: paymentTitle,
           phone,
           init_data: tg?.initData || "",
         }),
@@ -305,7 +315,7 @@
     }
     const payment = e.target.closest("[data-payment]");
     if (payment) {
-      state.paymentId = payment.dataset.payment;
+      state.paymentId = payment.getAttribute("data-payment") || payment.dataset.payment;
       renderDetail();
     }
   });
@@ -313,22 +323,21 @@
   els.orderBtn.addEventListener("click", submitOrder);
 
   async function boot() {
+    const DEFAULT_PAYMENTS = [
+      { id: "cash", title: "Наличные / карта" },
+      { id: "installment", title: "Рассрочка" },
+      { id: "leasing", title: "Лизинг" },
+    ];
     const res = await fetch("/api/catalog");
     if (!res.ok) {
       // Fallback if API fails but static file is available
       const fallback = await fetch("/catalog.json");
       if (!fallback.ok) throw new Error("Не удалось загрузить каталог");
       state.catalog = await fallback.json();
-      if (!state.catalog.payments) {
-        state.catalog.payments = [
-          { id: "cash", title: "Наличные / карта" },
-          { id: "installment", title: "Рассрочка" },
-          { id: "leasing", title: "Лизинг" },
-        ];
-      }
     } else {
       state.catalog = await res.json();
     }
+    if (!state.catalog.payments?.length) state.catalog.payments = DEFAULT_PAYMENTS;
     // normalize products if raw file without price_from
     state.catalog.products = (state.catalog.products || []).map((p) => {
       if (p.price_from) return p;
