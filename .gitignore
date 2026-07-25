@@ -11,5 +11,6 @@ bot/webapp/
 bothost-values.txt
 data/admin-password.json
 data/admin-actions.jsonl
+data/managers.json
 Dockerfile
 Dockerfile.custom.bak

@@ -252,7 +252,20 @@ function loadManagers() {
   try {
     if (fs.existsSync(MANAGERS_FILE)) {
       const data = readJsonFile(MANAGERS_FILE);
-      if (Array.isArray(data) && data.length) return data;
+      if (Array.isArray(data) && data.length) {
+        const list = data
+          .map((m) => ({
+            telegram_id: Number(m.telegram_id),
+            name: String(m.name || "").trim() || `ID ${m.telegram_id}`,
+          }))
+          .filter((m) => Number.isFinite(m.telegram_id) && m.telegram_id > 0);
+        // always keep owner from ENV if missing
+        const ownerId = Number(process.env.ADMIN_CHAT_ID || 0);
+        if (ownerId > 0 && !list.some((m) => Number(m.telegram_id) === ownerId)) {
+          list.unshift({ telegram_id: ownerId, name: "Владелец" });
+        }
+        return list.length ? list : defaultManagers();
+      }
     }
   } catch (_) {
     /* ignore */
