@@ -4,6 +4,7 @@
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const express = require("express");
 const {
   listOrders,
   updateOrder,
@@ -571,7 +572,7 @@ function mountAdmin(app) {
       if (/heic|heif/i.test(mime) || /\.(heic|heif)$/i.test(filename)) {
         return res.status(400).json({ detail: "HEIC с iPhone не подходит — сохрани как JPG или PNG" });
       }
-      const b64 = raw.replace(/^data:[^;]+;base64,/, "");
+      const b64 = raw.replace(/^data:.*?;base64,/i, "");
       if (!b64 || b64.length < 32) return res.status(400).json({ detail: "Нет файла" });
       const buf = Buffer.from(b64, "base64");
       if (buf.length > 15 * 1024 * 1024) return res.status(400).json({ detail: "Макс. 15 МБ" });
@@ -590,6 +591,43 @@ function mountAdmin(app) {
       res.status(400).json({ detail: err.message || "Ошибка загрузки" });
     }
   });
+
+  // Binary upload — no base64 bloat (PNG often failed JSON limit while JPG passed)
+  app.post(
+    "/a/:path/api/catalog/upload-bin",
+    gatePath,
+    requireAuth,
+    express.raw({ type: () => true, limit: "32mb" }),
+    (req, res) => {
+      try {
+        const buf = Buffer.isBuffer(req.body) ? req.body : Buffer.from(req.body || []);
+        if (!buf.length) return res.status(400).json({ detail: "Нет файла" });
+        if (buf.length > 15 * 1024 * 1024) return res.status(400).json({ detail: "Макс. 15 МБ" });
+        let filename = "upload.png";
+        try {
+          filename = decodeURIComponent(String(req.headers["x-filename"] || filename));
+        } catch (_) {
+          filename = String(req.headers["x-filename"] || filename);
+        }
+        if (/\.(heic|heif)$/i.test(filename)) {
+          return res.status(400).json({ detail: "HEIC с iPhone не подходит — сохрани как JPG или PNG" });
+        }
+        const url = catalogAdmin.saveUploadedImage(buf, filename);
+        const productId = String(req.headers["x-product-id"] || "").trim();
+        const colorId = String(req.headers["x-color-id"] || "").trim();
+        if (productId && colorId) {
+          catalogAdmin.patchColor(productId, colorId, { image: url });
+        }
+        res.json({ ok: true, url });
+      } catch (err) {
+        const msg = String(err.message || "");
+        if (/entity too large|request entity|PayloadTooLarge/i.test(msg)) {
+          return res.status(413).json({ detail: "Файл слишком большой (макс. ~15 МБ)" });
+        }
+        res.status(400).json({ detail: err.message || "Ошибка загрузки" });
+      }
+    }
+  );
 
   app.put("/a/:path/api/catalog/category", gatePath, requireAuth, (req, res) => {
     try {

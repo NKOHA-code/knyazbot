@@ -477,10 +477,21 @@
       toast._t = setTimeout(() => (el.style.display = "none"), 2200);
     }
     async function api(path, opts = {}) {
+      const headers = { ...(opts.headers || {}) };
+      const body = opts.body;
+      const isBinary =
+        typeof Blob !== "undefined" && body instanceof Blob ||
+        typeof ArrayBuffer !== "undefined" && body instanceof ArrayBuffer ||
+        typeof Uint8Array !== "undefined" && body instanceof Uint8Array;
+      if (!isBinary && !(typeof FormData !== "undefined" && body instanceof FormData)) {
+        if (!headers["Content-Type"] && !headers["content-type"]) {
+          headers["Content-Type"] = "application/json";
+        }
+      }
       const res = await fetch(basePath() + path, {
         credentials: "same-origin",
-        headers: { "Content-Type": "application/json", ...(opts.headers || {}) },
         ...opts,
+        headers,
       });
       if (res.status === 401) { location.href = basePath() + "/"; throw new Error("auth"); }
       const ct = res.headers.get("content-type") || "";
@@ -488,6 +499,37 @@
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.detail || "Ошибка");
       return data;
+    }
+
+    /** Downscale huge images; keep small PNG/JPG as-is (binary upload). */
+    async function prepareImageForUpload(file) {
+      const MAX_EDGE = 1800;
+      const KEEP_RAW_BYTES = 3 * 1024 * 1024;
+      const name = file.name || "photo.png";
+      if (file.size <= KEEP_RAW_BYTES) {
+        return { blob: file, filename: name };
+      }
+      let bitmap;
+      try {
+        bitmap = await createImageBitmap(file);
+      } catch (_) {
+        return { blob: file, filename: name };
+      }
+      const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
+      const w = Math.max(1, Math.round(bitmap.width * scale));
+      const h = Math.max(1, Math.round(bitmap.height * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(bitmap, 0, 0, w, h);
+      bitmap.close?.();
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.88));
+      if (!blob) return { blob: file, filename: name };
+      const base = name.replace(/\.[^.]+$/, "") || "photo";
+      return { blob, filename: base + ".jpg" };
     }
     function fmtDate(iso) {
       try {
@@ -1197,21 +1239,16 @@
             return;
           }
           toast("Загружаем фото…");
-          const dataUrl = await new Promise((resolve, reject) => {
-            const r = new FileReader();
-            r.onload = () => resolve(r.result);
-            r.onerror = reject;
-            r.readAsDataURL(file);
-          });
-          await api("/api/catalog/upload", {
+          const prepared = await prepareImageForUpload(file);
+          await api("/api/catalog/upload-bin", {
             method: "POST",
-            body: JSON.stringify({
-              data: dataUrl,
-              filename: file.name || "photo.png",
-              mime: file.type || "image/png",
-              product_id: row.dataset.pid,
-              color_id: row.dataset.color,
-            }),
+            headers: {
+              "Content-Type": "application/octet-stream",
+              "X-Filename": encodeURIComponent(prepared.filename),
+              "X-Product-Id": row.dataset.pid,
+              "X-Color-Id": row.dataset.color,
+            },
+            body: prepared.blob,
           });
           toast("Фото загружено");
           loadCatalog();
