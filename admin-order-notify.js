@@ -41,11 +41,14 @@ function buildAdminOrderNotify(order, opts = {}) {
 
   const text =
     `<b>Новая заявка${idPart}</b> · ${escapeHtml(shopName)}\n\n` +
-    `<b>${escapeHtml(order.productName || "")}</b> · ${escapeHtml(order.colorName || "")} · ${escapeHtml(order.storage || "")}\n` +
-    `${escapeHtml(order.priceText || "")} · ${escapeHtml(order.payment || "")}\n\n` +
-    `Телефон: ${phoneHtml}\n` +
-    `${clientLine}\n` +
-    `ID: <code>${escapeHtml(order.userId || "—")}</code>`;
+    `📱 Товар: <b>${escapeHtml(order.productName || "")}</b>\n` +
+    `🎨 Цвет: ${escapeHtml(order.colorName || "")}\n` +
+    `💾 Память: ${escapeHtml(order.storage || "")}\n` +
+    `💰 Цена: ${escapeHtml(order.priceText || "")}\n` +
+    `💳 Оплата: ${escapeHtml(order.payment || "")}\n` +
+    `📞 Телефон: ${phoneHtml}\n\n` +
+    `👤 ${clientLine}\n` +
+    `🆔 ID: <code>${escapeHtml(order.userId || "—")}</code>`;
 
   const row = [];
   if (username) {
