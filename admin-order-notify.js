@@ -1,0 +1,73 @@
+/**
+ * Build HTML text + inline keyboard for admin order notifications.
+ */
+
+function escapeHtml(s) {
+  return String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function telHref(phone) {
+  const digits = String(phone || "").replace(/[^\d+]/g, "");
+  if (!digits) return "";
+  return digits.startsWith("+") ? digits : `+${digits.replace(/^\+/, "")}`;
+}
+
+/**
+ * @param {object} order
+ * @param {object} opts
+ * @param {string} [opts.shopName]
+ * @param {string} [opts.adminUrl]
+ * @returns {{ text: string, reply_markup: { inline_keyboard: object[][] } }}
+ */
+function buildAdminOrderNotify(order, opts = {}) {
+  const shopName = opts.shopName || "КнязьMobile";
+  const adminUrl = (opts.adminUrl || "").replace(/\/$/, "");
+  const idPart = order.orderId ? ` #${order.orderId}` : "";
+  const phone = String(order.phone || "").trim();
+  const tel = telHref(phone);
+  const phoneHtml = tel
+    ? `<a href="tel:${escapeHtml(tel)}">${escapeHtml(phone)}</a>`
+    : escapeHtml(phone || "—");
+
+  const username = order.username ? String(order.username).replace(/^@/, "") : "";
+  const fullName = escapeHtml(order.fullName || "Клиент");
+  const clientLine = username
+    ? `Клиент: ${fullName} · <a href="https://t.me/${escapeHtml(username)}">@${escapeHtml(username)}</a>`
+    : `Клиент: ${fullName} · без username`;
+
+  const text =
+    `<b>Новая заявка${idPart}</b> · ${escapeHtml(shopName)}\n\n` +
+    `<b>${escapeHtml(order.productName || "")}</b> · ${escapeHtml(order.colorName || "")} · ${escapeHtml(order.storage || "")}\n` +
+    `${escapeHtml(order.priceText || "")} · ${escapeHtml(order.payment || "")}\n\n` +
+    `Телефон: ${phoneHtml}\n` +
+    `${clientLine}\n` +
+    `ID: <code>${escapeHtml(order.userId || "—")}</code>`;
+
+  const row = [];
+  if (username) {
+    row.push({ text: "Написать", url: `https://t.me/${username}` });
+  }
+  if (adminUrl) {
+    row.push({ text: "Открыть админку", url: `${adminUrl}/app` });
+  }
+  const reply_markup = row.length ? { inline_keyboard: [row] } : { inline_keyboard: [] };
+
+  return { text, reply_markup };
+}
+
+function adminPanelBaseUrl(publicBase, adminPath) {
+  const base = String(publicBase || "").replace(/\/$/, "");
+  const ap = String(adminPath || "").trim().replace(/^\/+|\/+$/g, "");
+  if (!base || !ap) return "";
+  return `${base}/a/${ap}`;
+}
+
+module.exports = {
+  escapeHtml,
+  buildAdminOrderNotify,
+  adminPanelBaseUrl,
+};

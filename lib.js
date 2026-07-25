@@ -5,11 +5,13 @@ const express = require("express");
 const { Bot, InlineKeyboard, Keyboard } = require("grammy");
 const { initDb, saveOrder } = require("./db");
 const { mountAdmin } = require("./admin-panel");
+const { buildAdminOrderNotify, adminPanelBaseUrl } = require("./admin-order-notify");
 
 const PORT = Number(process.env.PORT || 3000);
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const ADMIN_CHAT_ID = Number(process.env.ADMIN_CHAT_ID || 318629821);
 const DOMAIN = (process.env.DOMAIN || "").trim();
+const ADMIN_PATH = (process.env.ADMIN_PATH || "").trim().replace(/^\/+|\/+$/g, "");
 const MANAGER_USERNAME = process.env.MANAGER_USERNAME || "knyaztut";
 const MANAGER_PHONE = process.env.MANAGER_PHONE || "+375297330592";
 const SHOP_ADDRESS = process.env.SHOP_ADDRESS || "Минск, Нововиленская 10";
@@ -205,19 +207,31 @@ async function startHttp(botForNotify) {
         console.error("saveOrder failed", dbErr);
       }
 
-      const text =
-        `🛒 <b>Новая заявка уКнязя</b>${orderId ? ` #${orderId}` : ""}\n\n` +
-        `📱 Товар: <b>${product.name}</b>\n` +
-        `🎨 Цвет: ${color.name}\n` +
-        `💾 Память: ${config.storage}\n` +
-        `💰 Цена: ${priceText(config.price)}\n` +
-        `💳 Оплата: ${payment}\n` +
-        `📞 Телефон: <code>${phone}</code>\n\n` +
-        `👤 Клиент: ${fullName} (${username ? "@" + username : "без username"})\n` +
-        `🆔 ID: <code>${userId}</code>`;
+      const notify = buildAdminOrderNotify(
+        {
+          orderId,
+          productName: product.name,
+          colorName: color.name,
+          storage: config.storage,
+          priceText: priceText(config.price),
+          payment,
+          phone,
+          fullName,
+          username,
+          userId,
+        },
+        {
+          shopName: SHOP_NAME,
+          adminUrl: adminPanelBaseUrl(publicUrl(), ADMIN_PATH),
+        }
+      );
 
       const notifier = botForNotify || new Bot(BOT_TOKEN);
-      await notifier.api.sendMessage(ADMIN_CHAT_ID, text, { parse_mode: "HTML" });
+      await notifier.api.sendMessage(ADMIN_CHAT_ID, notify.text, {
+        parse_mode: "HTML",
+        reply_markup: notify.reply_markup,
+        disable_web_page_preview: true,
+      });
       return res.json({ ok: true, order_id: orderId });
     } catch (err) {
       console.error("order error", err);
