@@ -217,24 +217,28 @@ async function startHttp(botForNotify) {
         console.error("saveOrder failed", dbErr);
       }
 
-      const notify = buildAdminOrderNotify(
-        {
-          orderId,
-          productName: product.name,
-          colorName: color.name,
-          storage: config.storage,
-          priceText: priceText(config.price),
-          payment: paymentTitle,
-          phone,
-          fullName,
-          username,
-          userId,
-        },
-        {
-          shopName: SHOP_NAME,
-          adminUrl: adminPanelBaseUrl(publicUrl(), ADMIN_PATH),
-        }
-      );
+      const notifyBase = {
+        orderId,
+        productName: product.name,
+        colorName: color.name,
+        storage: config.storage,
+        priceText: priceText(config.price),
+        payment: paymentTitle,
+        phone,
+        fullName,
+        username,
+        userId,
+      };
+      const adminUrl = adminPanelBaseUrl(publicUrl(), ADMIN_PATH);
+      const notifyManagers = buildAdminOrderNotify(notifyBase, {
+        shopName: SHOP_NAME,
+        includeAdminButton: false,
+      });
+      const notifyOwner = buildAdminOrderNotify(notifyBase, {
+        shopName: SHOP_NAME,
+        adminUrl,
+        includeAdminButton: true,
+      });
 
       const notifier = botForNotify || new Bot(BOT_TOKEN);
       const chatIds = new Set([ADMIN_CHAT_ID].filter(Boolean));
@@ -244,9 +248,10 @@ async function startHttp(botForNotify) {
       }
       for (const chatId of chatIds) {
         try {
-          await notifier.api.sendMessage(chatId, notify.text, {
+          const payload = Number(chatId) === Number(ADMIN_CHAT_ID) ? notifyOwner : notifyManagers;
+          await notifier.api.sendMessage(chatId, payload.text, {
             parse_mode: "HTML",
-            reply_markup: notify.reply_markup,
+            reply_markup: payload.reply_markup,
             disable_web_page_preview: true,
           });
         } catch (notifyErr) {

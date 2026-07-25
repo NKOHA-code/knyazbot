@@ -60,7 +60,8 @@ function buildAdminOrderNotify(order, opts = {}) {
   } else if (userId) {
     row.push({ text: "Написать", url: `tg://user?id=${userId}` });
   }
-  if (adminUrl) {
+  // Admin link only when explicitly requested (owner chat) — do not leak ADMIN_PATH to everyone
+  if (opts.includeAdminButton && adminUrl) {
     row.push({ text: "Открыть админку", url: `${adminUrl}/app` });
   }
   const reply_markup = row.length ? { inline_keyboard: [row] } : { inline_keyboard: [] };
