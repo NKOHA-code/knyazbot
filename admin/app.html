@@ -790,7 +790,7 @@
             <div class="name">${escapeHtml(c.name)}</div>
             <div class="color-actions">
               <input type="color" data-hex value="${escapeAttr(c.hex || "#888888")}" title="цвет" />
-              <label class="file-btn">фото<input type="file" accept="image/*" data-upload hidden /></label>
+              <label class="file-btn">фото<input type="file" accept="image/*,.png,.jpg,.jpeg,.webp,.gif,.bmp,.heic,.heif" data-upload hidden /></label>
               <button type="button" class="del-mini" data-del-color title="Удалить">×</button>
             </div>
           </div>
@@ -1173,6 +1173,30 @@
         if (fileInput && fileInput.files?.[0]) {
           const row = fileInput.closest(".color-tile");
           const file = fileInput.files[0];
+          fileInput.value = "";
+          const name = (file.name || "").toLowerCase();
+          const mime = (file.type || "").toLowerCase();
+          const isHeic =
+            mime.includes("heic") ||
+            mime.includes("heif") ||
+            /\.(heic|heif)$/i.test(name);
+          if (isHeic) {
+            toast("HEIC с iPhone не подходит — сохрани как JPG или PNG");
+            return;
+          }
+          const okType =
+            !mime ||
+            mime.startsWith("image/") ||
+            /\.(png|jpe?g|jfif|webp|gif|bmp|avif)$/i.test(name);
+          if (!okType) {
+            toast("Нужен файл изображения (PNG, JPG, WEBP)");
+            return;
+          }
+          if (file.size > 15 * 1024 * 1024) {
+            toast("Макс. 15 МБ");
+            return;
+          }
+          toast("Загружаем фото…");
           const dataUrl = await new Promise((resolve, reject) => {
             const r = new FileReader();
             r.onload = () => resolve(r.result);
@@ -1183,7 +1207,8 @@
             method: "POST",
             body: JSON.stringify({
               data: dataUrl,
-              filename: file.name,
+              filename: file.name || "photo.png",
+              mime: file.type || "image/png",
               product_id: row.dataset.pid,
               color_id: row.dataset.color,
             }),

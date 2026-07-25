@@ -227,9 +227,40 @@ function patchColor(productId, colorId, patch) {
   return product;
 }
 
-function saveUploadedImage(buffer, filenameHint = "upload.png") {
+function detectImageExt(buffer, filenameHint = "upload.png") {
+  if (buffer && buffer.length >= 12) {
+    if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47) return ".png";
+    if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return ".jpg";
+    if (buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46) return ".gif";
+    if (buffer[0] === 0x42 && buffer[1] === 0x4d) return ".bmp";
+    if (
+      buffer.toString("ascii", 0, 4) === "RIFF" &&
+      buffer.toString("ascii", 8, 12) === "WEBP"
+    ) {
+      return ".webp";
+    }
+    // ISO BMFF (HEIC/AVIF): ....ftyp....
+    if (buffer.length >= 12 && buffer.toString("ascii", 4, 8) === "ftyp") {
+      const brand = buffer.toString("ascii", 8, 12).toLowerCase();
+      if (brand.startsWith("heic") || brand.startsWith("heif") || brand === "mif1" || brand === "msf1") {
+        throw new Error("HEIC с iPhone не подходит — сохрани как JPG или PNG");
+      }
+      if (brand.startsWith("avif") || brand === "avis") return ".avif";
+    }
+  }
   const ext = path.extname(filenameHint).toLowerCase() || ".png";
-  const safeExt = [".png", ".jpg", ".jpeg", ".webp", ".gif"].includes(ext) ? ext : ".png";
+  if ([".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".avif", ".jfif"].includes(ext)) {
+    if (ext === ".jpeg" || ext === ".jfif") return ".jpg";
+    return ext;
+  }
+  return ".png";
+}
+
+function saveUploadedImage(buffer, filenameHint = "upload.png") {
+  if (!Buffer.isBuffer(buffer) || buffer.length < 24) {
+    throw new Error("Пустой или повреждённый файл");
+  }
+  const safeExt = detectImageExt(buffer, filenameHint);
   const name = `up-${Date.now()}-${crypto.randomBytes(4).toString("hex")}${safeExt}`;
   const dir = path.join(__dirname, "public", "images", "uploads");
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });

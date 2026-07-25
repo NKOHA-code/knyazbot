@@ -51,6 +51,77 @@
     toast._t = setTimeout(() => els.toast.classList.add("hidden"), 2800);
   }
 
+  /** Belarus mobile: 375 + 9 digits = 12 digits */
+  function digitsOnly(value) {
+    return String(value || "").replace(/\D/g, "");
+  }
+
+  function normalizeByPhone(raw) {
+    let d = digitsOnly(raw);
+    if (d.startsWith("80") && d.length >= 11) d = "375" + d.slice(2);
+    if (d.startsWith("0") && d.length === 10) d = "375" + d.slice(1);
+    if (d.length === 9 && !d.startsWith("375")) d = "375" + d;
+    if (d.length > 12) d = d.slice(0, 12);
+    return d;
+  }
+
+  function formatByPhoneDisplay(raw) {
+    const d = normalizeByPhone(raw);
+    if (!d) return "";
+    // build +375 XX XXX XX XX as user types
+    let out = "+";
+    if (d.length <= 3) return out + d;
+    out += d.slice(0, 3); // 375
+    const rest = d.slice(3); // up to 9
+    if (!rest.length) return out;
+    out += " " + rest.slice(0, 2);
+    if (rest.length > 2) out += " " + rest.slice(2, 5);
+    if (rest.length > 5) out += " " + rest.slice(5, 7);
+    if (rest.length > 7) out += " " + rest.slice(7, 9);
+    return out;
+  }
+
+  function isValidByPhone(raw) {
+    return /^375\d{9}$/.test(normalizeByPhone(raw));
+  }
+
+  function phoneE164(raw) {
+    const d = normalizeByPhone(raw);
+    return d ? `+${d}` : "";
+  }
+
+  function bindPhoneInput() {
+    if (!els.phone) return;
+    els.phone.addEventListener("input", () => {
+      const formatted = formatByPhoneDisplay(els.phone.value);
+      els.phone.value = formatted;
+    });
+    els.phone.addEventListener("keydown", (e) => {
+      // allow control keys
+      if (
+        e.ctrlKey ||
+        e.metaKey ||
+        e.altKey ||
+        ["Backspace", "Delete", "Tab", "Escape", "Enter", "ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)
+      ) {
+        return;
+      }
+      if (!/^\d$/.test(e.key)) {
+        e.preventDefault();
+        return;
+      }
+      // block extra digits beyond 12
+      const d = normalizeByPhone(els.phone.value);
+      const sel = els.phone.selectionStart !== els.phone.selectionEnd;
+      if (!sel && d.length >= 12) e.preventDefault();
+    });
+    els.phone.addEventListener("paste", (e) => {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData("text");
+      els.phone.value = formatByPhoneDisplay(text);
+    });
+  }
+
   function priceText(price) {
     if (!price || price <= 0) return "уточнит менеджер";
     return `${price.toLocaleString("ru-RU")} BYN`;
@@ -232,7 +303,6 @@
   }
 
   async function submitOrder() {
-    const phone = els.phone.value.trim();
     if (!state.product || !state.colorId || !state.configId) {
       toast("Выберите цвет и конфигурацию");
       return;
@@ -243,11 +313,12 @@
     }
     const paymentTitle =
       (state.catalog.payments || []).find((p) => p.id === state.paymentId)?.title || state.paymentId;
-    if (phone.length < 7) {
-      toast("Укажите телефон для связи");
+    if (!isValidByPhone(els.phone.value)) {
+      toast("Введите номер РБ: +375 и 9 цифр");
       els.phone.focus();
       return;
     }
+    const phone = phoneE164(els.phone.value);
 
     els.orderBtn.disabled = true;
     els.orderBtn.textContent = "Отправляем…";
@@ -353,5 +424,6 @@
     renderList();
   }
 
+  bindPhoneInput();
   boot().catch((err) => toast(err.message || "Ошибка загрузки"));
 })();

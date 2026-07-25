@@ -564,10 +564,17 @@ function mountAdmin(app) {
     try {
       const raw = String((req.body && req.body.data) || "");
       const filename = String((req.body && req.body.filename) || "upload.png");
+      const mime = String((req.body && req.body.mime) || "");
+      if (mime && !mime.startsWith("image/") && mime !== "application/octet-stream") {
+        return res.status(400).json({ detail: "Нужен файл изображения (PNG, JPG, WEBP)" });
+      }
+      if (/heic|heif/i.test(mime) || /\.(heic|heif)$/i.test(filename)) {
+        return res.status(400).json({ detail: "HEIC с iPhone не подходит — сохрани как JPG или PNG" });
+      }
       const b64 = raw.replace(/^data:[^;]+;base64,/, "");
       if (!b64 || b64.length < 32) return res.status(400).json({ detail: "Нет файла" });
       const buf = Buffer.from(b64, "base64");
-      if (buf.length > 4 * 1024 * 1024) return res.status(400).json({ detail: "Макс. 4 МБ" });
+      if (buf.length > 15 * 1024 * 1024) return res.status(400).json({ detail: "Макс. 15 МБ" });
       const url = catalogAdmin.saveUploadedImage(buf, filename);
       const productId = req.body?.product_id;
       const colorId = req.body?.color_id;
@@ -576,6 +583,10 @@ function mountAdmin(app) {
       }
       res.json({ ok: true, url });
     } catch (err) {
+      const msg = String(err.message || "");
+      if (/entity too large|request entity|PayloadTooLarge/i.test(msg)) {
+        return res.status(413).json({ detail: "Файл слишком большой (макс. ~15 МБ)" });
+      }
       res.status(400).json({ detail: err.message || "Ошибка загрузки" });
     }
   });

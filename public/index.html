@@ -69,7 +69,16 @@
 
         <label class="field">
           <span class="block-label">Телефон</span>
-          <input id="phone" type="tel" inputmode="tel" placeholder="+375XXXXXXXXX" autocomplete="tel" />
+          <input
+            id="phone"
+            type="tel"
+            inputmode="numeric"
+            autocomplete="tel"
+            placeholder="+375 XX XXX XX XX"
+            maxlength="17"
+            enterkeyhint="done"
+          />
+          <span class="fineprint" id="phone-hint">Только цифры, номер РБ: +375 и 9 цифр</span>
         </label>
 
         <button type="button" class="cta" id="order-btn">Оставить заявку</button>
@@ -79,7 +88,7 @@
 
     <div id="toast" class="toast hidden"></div>
   </div>
-  <script src="/script.js?v=20260725pay"></script>
+  <script src="/script.js?v=20260726phone"></script>
 </body>
 </html>
 

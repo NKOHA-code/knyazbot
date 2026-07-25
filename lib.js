@@ -123,7 +123,7 @@ function parseInitData(initData, botToken) {
 }
 
 async function startHttp(botForNotify) {
-  console.log("КнязьMobile build=2026-07-24c (bom-safe catalog)");
+  console.log("КнязьMobile build=2026-07-26a (photo-upload-32mb)");
   await initDb();
   try {
     const cat = loadCatalog();
@@ -132,8 +132,9 @@ async function startHttp(botForNotify) {
     console.error("catalog preload failed", err.message);
   }
   const app = express();
-  app.use(express.json({ limit: "1mb" }));
-  app.use(express.urlencoded({ extended: false }));
+  // 32mb: photo as base64 is ~4/3 of file size; 15MB file ≈ 20MB+ JSON
+  app.use(express.json({ limit: "32mb" }));
+  app.use(express.urlencoded({ extended: false, limit: "32mb" }));
   mountAdmin(app);
   app.use(express.static(path.join(__dirname, "public")));
 
@@ -165,8 +166,21 @@ async function startHttp(botForNotify) {
     try {
       if (!BOT_TOKEN) return res.status(500).json({ detail: "BOT_TOKEN missing" });
       const body = req.body || {};
-      const phone = String(body.phone || "").trim();
-      if (phone.length < 7) return res.status(400).json({ detail: "Укажите телефон" });
+      let phone = String(body.phone || "").trim();
+      let phoneDigits = phone.replace(/\D/g, "");
+      if (phoneDigits.startsWith("80") && phoneDigits.length >= 11) {
+        phoneDigits = "375" + phoneDigits.slice(2);
+      }
+      if (phoneDigits.startsWith("0") && phoneDigits.length === 10) {
+        phoneDigits = "375" + phoneDigits.slice(1);
+      }
+      if (phoneDigits.length === 9 && !phoneDigits.startsWith("375")) {
+        phoneDigits = "375" + phoneDigits;
+      }
+      if (!/^375\d{9}$/.test(phoneDigits)) {
+        return res.status(400).json({ detail: "Укажите номер РБ: +375 и 9 цифр" });
+      }
+      phone = `+${phoneDigits}`;
 
       const catalog = loadCatalog();
       const product = findProduct(catalog, String(body.product_id || ""));
@@ -263,6 +277,17 @@ async function startHttp(botForNotify) {
       console.error("order error", err);
       return res.status(500).json({ detail: "Ошибка отправки заявки" });
     }
+  });
+
+  // body-parser PayloadTooLargeError is thrown before route handlers
+  app.use((err, _req, res, next) => {
+    if (!err) return next();
+    if (err.type === "entity.too.large" || err.status === 413 || err.name === "PayloadTooLargeError") {
+      return res.status(413).json({ detail: "Файл слишком большой (макс. 15 МБ)" });
+    }
+    console.error("http error", err);
+    if (res.headersSent) return next(err);
+    res.status(err.status || 500).json({ detail: err.message || "Ошибка сервера" });
   });
 
   await new Promise((resolve) => {
