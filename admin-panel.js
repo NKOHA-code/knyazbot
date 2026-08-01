@@ -785,11 +785,31 @@ function mountAdmin(app) {
       if (!settings.enabled) {
         return res.status(400).json({ detail: "Сначала включите привязку к курсу" });
       }
-      const result = await fx.refreshFx({ forceSeed: true });
-      logAction("fx.refresh", `${result.fx?.currency} ${result.fx?.rate}`, actorName(req));
+      const result = fx.refreshFx({ forceSeed: true });
+      logAction("fx.apply", `${result.fx?.currency} ${result.fx?.rate}`, actorName(req));
       res.json(result);
     } catch (err) {
-      res.status(400).json({ detail: err.message || "Не удалось обновить курс" });
+      res.status(400).json({ detail: err.message || "Не удалось пересчитать цены" });
+    }
+  });
+
+  app.post("/a/:path/api/fx/nbrb-suggest", gatePath, requireAuth, async (req, res) => {
+    try {
+      const fx = require("./fx-rates");
+      const currency = String(req.body?.currency || fx.readFx().currency || "USD");
+      const suggested = await fx.fetchNbrbRate(currency);
+      res.json({
+        ok: true,
+        suggested: {
+          currency: suggested.currency,
+          rate: suggested.rate,
+          rate_scale: suggested.scale,
+          date: suggested.date,
+          name: suggested.name,
+        },
+      });
+    } catch (err) {
+      res.status(400).json({ detail: err.message || "Не удалось получить курс НБРБ" });
     }
   });
 

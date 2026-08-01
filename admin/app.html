@@ -493,7 +493,7 @@
         </button>
         <button type="button" class="tab" data-tab="settings">
           <span class="tab-title">Настройки</span>
-          <span class="tab-hint">курс НБРБ и пароль</span>
+          <span class="tab-hint">свой курс и пароль</span>
         </button>
       </nav>
       <div class="nav-foot">
@@ -543,7 +543,7 @@
           <div class="cat-tools-body">
             <div class="help-box">
               <b>Как обновлять цены:</b><br />
-              A — курс НБРБ в «Настройках».<br />
+              A — свой курс в «Настройках» (USD/EUR → BYN).<br />
               B — «Ежедневный прайс»: скачал → поправил → импорт.
             </div>
             <div class="side-card">
@@ -683,13 +683,13 @@
     <section class="panel" id="panel-settings">
       <div class="page-head">
         <h2>Настройки</h2>
-        <p>Курс Нацбанка, пароль входа и журнал действий.</p>
+        <p>Свой курс валюты, пароль входа и журнал действий.</p>
       </div>
       <div class="card" style="margin-bottom:12px">
-        <h2 style="margin:0 0 8px;font-size:1rem">A · Курс Нацбанка</h2>
+        <h2 style="margin:0 0 8px;font-size:1rem">A · Свой курс</h2>
         <div class="meta" style="margin-bottom:10px">
-          База в USD/EUR, витрина в BYN. Курс НБРБ обновляется каждый час.
-          Для прайса в рублях — блок «Ежедневный прайс» в каталоге (B).
+          База в USD/EUR — витрина в BYN. Курс задаёшь сам и меняешь когда нужно.
+          Для прайса сразу в рублях — «Ежедневный прайс» в каталоге (B).
         </div>
         <div id="fx-status" class="muted" style="margin-bottom:12px">—</div>
         <div class="field-grid two">
@@ -710,6 +710,14 @@
             </select>
           </div>
           <div class="field">
+            <label>Курс (BYN за 1 ед. валюты)</label>
+            <input id="fx-rate" type="number" step="0.0001" min="0" placeholder="например 3.25" />
+          </div>
+          <div class="field">
+            <label>Кратность</label>
+            <input id="fx-scale" type="number" step="1" min="1" value="1" title="Обычно 1. Для RUB иногда 100" />
+          </div>
+          <div class="field">
             <label>Наценка к курсу, %</label>
             <input id="fx-markup" type="number" step="0.1" value="0" />
           </div>
@@ -723,8 +731,9 @@
           </div>
         </div>
         <div class="p-footer" style="border:0;padding-top:0;gap:8px;display:flex;flex-wrap:wrap">
-          <button type="button" class="primary" id="fx-save">Сохранить</button>
-          <button type="button" class="ghost" id="fx-refresh">Обновить курс сейчас</button>
+          <button type="button" class="primary" id="fx-save">Сохранить и пересчитать</button>
+          <button type="button" class="ghost" id="fx-apply">Пересчитать цены</button>
+          <button type="button" class="ghost" id="fx-nbrb">Подставить курс НБРБ</button>
         </div>
       </div>
       <div class="card" style="margin-bottom:12px">
@@ -1838,14 +1847,16 @@
         el.textContent = "Нет данных";
         return;
       }
-      const rate =
+      const per = fx.byn_per_unit != null ? Number(fx.byn_per_unit).toFixed(4) : null;
+      const rateText =
         fx.rate != null
-          ? `1 ${fx.currency} = ${(fx.byn_per_unit || fx.rate / (fx.rate_scale || 1)).toFixed(4)} BYN`
-          : "курс ещё не загружен";
+          ? `1 ${fx.currency} = ${per || fx.rate} BYN` +
+            (fx.rate_scale && fx.rate_scale !== 1 ? ` (курс ${fx.rate} за ${fx.rate_scale})` : "")
+          : "курс ещё не задан";
       const when = fx.updated_at ? fmtDate(fx.updated_at) : "—";
       const err = fx.last_error ? ` · ошибка: ${fx.last_error}` : "";
       el.innerHTML = fx.enabled
-        ? `<b>Вкл</b> · ${escapeHtml(rate)} · обновлено ${escapeHtml(when)}${escapeHtml(err)}`
+        ? `<b>Вкл</b> · свой курс · ${escapeHtml(rateText)} · обновлено ${escapeHtml(when)}${escapeHtml(err)}`
         : `<b>Выкл</b> · цены правятся вручную в BYN`;
     }
     async function loadFx() {
@@ -1855,6 +1866,8 @@
         state.fx = fx;
         $("fx-enabled").value = fx.enabled ? "1" : "0";
         $("fx-currency").value = fx.currency || "USD";
+        $("fx-rate").value = fx.rate != null ? fx.rate : "";
+        $("fx-scale").value = fx.rate_scale || 1;
         $("fx-markup").value = fx.markup_percent ?? 0;
         $("fx-round").value = String(fx.round_to || 1);
         renderFxStatus(fx);
@@ -1883,23 +1896,42 @@
           body: JSON.stringify({
             enabled: $("fx-enabled").value === "1",
             currency: $("fx-currency").value,
+            rate: $("fx-rate").value,
+            rate_scale: $("fx-scale").value,
             markup_percent: Number($("fx-markup").value) || 0,
             round_to: Number($("fx-round").value) || 1,
           }),
         });
         state.fx = result.fx;
         renderFxStatus(result.fx);
-        toast(result.fx?.enabled ? "Курс включён, цены пересчитаны" : "Привязка выключена");
+        if (result.fx) {
+          $("fx-rate").value = result.fx.rate != null ? result.fx.rate : "";
+          $("fx-scale").value = result.fx.rate_scale || 1;
+        }
+        toast(result.fx?.enabled ? "Курс сохранён, цены пересчитаны" : "Привязка выключена");
         if (state.tab === "catalog") loadCatalog();
       } catch (ex) { toast(ex.message); }
     });
-    $("fx-refresh") && ($("fx-refresh").onclick = async () => {
+    $("fx-apply") && ($("fx-apply").onclick = async () => {
       try {
         const result = await api("/api/fx/refresh", { method: "POST", body: "{}" });
         state.fx = result.fx;
         renderFxStatus(result.fx);
-        toast("Курс обновлён");
+        toast("Цены пересчитаны");
         if (state.tab === "catalog") loadCatalog();
+      } catch (ex) { toast(ex.message); }
+    });
+    $("fx-nbrb") && ($("fx-nbrb").onclick = async () => {
+      try {
+        const data = await api("/api/fx/nbrb-suggest", {
+          method: "POST",
+          body: JSON.stringify({ currency: $("fx-currency").value }),
+        });
+        const s = data.suggested || {};
+        if (s.rate != null) $("fx-rate").value = s.rate;
+        if (s.rate_scale != null) $("fx-scale").value = s.rate_scale;
+        if (s.currency) $("fx-currency").value = s.currency;
+        toast("Курс НБРБ подставлен — нажми «Сохранить и пересчитать»");
       } catch (ex) { toast(ex.message); }
     });
     $("pwd-save") && ($("pwd-save").onclick = async () => {

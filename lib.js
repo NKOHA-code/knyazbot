@@ -124,7 +124,7 @@ function parseInitData(initData, botToken) {
 }
 
 async function startHttp(botForNotify) {
-  console.log("КнязьMobile build=2026-08-01c (persist-catalog-uploads)");
+  console.log("КнязьMobile build=2026-08-01d (manual-fx-rate)");
   await initDb();
   try {
     const cat = loadCatalog();

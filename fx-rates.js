@@ -1,13 +1,12 @@
 /**
- * NBRB FX: base prices in foreign currency → BYN via official rate.
- * Hourly refresh in the HTTP process.
+ * Manual FX: base prices in foreign currency → BYN via admin-set rate.
+ * Rate is static until you change it in settings.
  */
 const fs = require("fs");
 const path = require("path");
 
 const FX_FILE = path.join(__dirname, "data", "fx-settings.json");
 const NBRB_URL = "https://api.nbrb.by/exrates/rates";
-const HOUR_MS = 60 * 60 * 1000;
 
 function catalogAdmin() {
   return require("./catalog-admin");
@@ -18,20 +17,19 @@ const DEFAULTS = {
   currency: "USD",
   markup_percent: 0,
   round_to: 1,
-  rate: null,
+  rate: null, // BYN for `rate_scale` units of currency
   rate_scale: 1,
   rate_date: null,
   updated_at: null,
   last_error: null,
+  source: "manual",
 };
-
-let timer = null;
 
 function readFx() {
   try {
     if (!fs.existsSync(FX_FILE)) return { ...DEFAULTS };
     const raw = JSON.parse(fs.readFileSync(FX_FILE, "utf8"));
-    return { ...DEFAULTS, ...raw };
+    return { ...DEFAULTS, ...raw, source: "manual" };
   } catch (_) {
     return { ...DEFAULTS };
   }
@@ -40,28 +38,30 @@ function readFx() {
 function writeFx(settings) {
   const dir = path.dirname(FX_FILE);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(FX_FILE, JSON.stringify(settings, null, 2) + "\n", "utf8");
-  return settings;
+  const next = { ...settings, source: "manual" };
+  fs.writeFileSync(FX_FILE, JSON.stringify(next, null, 2) + "\n", "utf8");
+  return next;
 }
 
 function getFxPublic(settings = readFx()) {
+  const scale = Number(settings.rate_scale) || 1;
+  const rate = settings.rate != null ? Number(settings.rate) : null;
   return {
     enabled: Boolean(settings.enabled),
     currency: settings.currency || "USD",
     markup_percent: Number(settings.markup_percent) || 0,
     round_to: Number(settings.round_to) || 1,
-    rate: settings.rate,
-    rate_scale: settings.rate_scale || 1,
-    rate_date: settings.rate_date,
+    rate,
+    rate_scale: scale,
+    rate_date: settings.rate_date || null,
     updated_at: settings.updated_at,
     last_error: settings.last_error || null,
-    byn_per_unit:
-      settings.rate != null && settings.rate_scale
-        ? Number(settings.rate) / Number(settings.rate_scale)
-        : null,
+    source: "manual",
+    byn_per_unit: rate != null && scale ? rate / scale : null,
   };
 }
 
+/** Optional helper: suggest official NBRB rate (does not auto-apply). */
 async function fetchNbrbRate(currency = "USD") {
   const code = String(currency || "USD").toUpperCase();
   const url = `${NBRB_URL}/${encodeURIComponent(code)}?parammode=2`;
@@ -101,7 +101,6 @@ function fxFromByn(priceByn, rate, scale) {
   return Math.round((byn / perUnit) * 100) / 100;
 }
 
-/** Ensure every config has price_fx; seed from BYN using current rate if missing. */
 function ensurePriceFx(data, rate, scale) {
   let seeded = 0;
   for (const p of data.products || []) {
@@ -115,11 +114,14 @@ function ensurePriceFx(data, rate, scale) {
   return seeded;
 }
 
-function applyRateToCatalog(settings, rateInfo) {
+function applyRateToCatalog(settings) {
+  const rate = Number(settings.rate);
+  const scale = Number(settings.rate_scale) || 1;
+  if (!Number.isFinite(rate) || rate <= 0) {
+    throw new Error("Укажите курс (число > 0)");
+  }
   const ca = catalogAdmin();
   const { data } = ca.loadRawCatalog();
-  const rate = rateInfo.rate;
-  const scale = rateInfo.scale;
   ensurePriceFx(data, rate, scale);
 
   let updated = 0;
@@ -150,43 +152,43 @@ function applyRateToCatalog(settings, rateInfo) {
   return { configs: updated };
 }
 
-async function refreshFx({ forceSeed = false } = {}) {
+/** Recalculate catalog using the stored manual rate. */
+function refreshFx({ forceSeed = false } = {}) {
   const settings = readFx();
   if (!settings.enabled && !forceSeed) {
     return { ok: true, skipped: true, fx: getFxPublic(settings) };
   }
+  if (settings.rate == null || !(Number(settings.rate) > 0)) {
+    throw new Error("Сначала укажите свой курс и сохраните");
+  }
   try {
-    const rateInfo = await fetchNbrbRate(settings.currency);
     const next = {
       ...settings,
-      rate: rateInfo.rate,
-      rate_scale: rateInfo.scale,
-      rate_date: rateInfo.date,
-      currency: rateInfo.currency || settings.currency,
+      rate_scale: Number(settings.rate_scale) || 1,
       updated_at: new Date().toISOString(),
       last_error: null,
+      source: "manual",
     };
-    const result = applyRateToCatalog(next, rateInfo);
+    const result = applyRateToCatalog(next);
     writeFx(next);
     console.log(
-      `FX NBRB ${next.currency}=${next.rate}/${next.rate_scale} markup=${next.markup_percent}% configs≈${result.configs}`
+      `FX manual ${next.currency}=${next.rate}/${next.rate_scale} markup=${next.markup_percent}% configs≈${result.configs}`
     );
     return { ok: true, fx: getFxPublic(next), ...result };
   } catch (err) {
     const failed = {
       ...settings,
       last_error: String(err.message || err),
-      updated_at: settings.updated_at,
     };
     writeFx(failed);
-    console.error("FX refresh failed", err.message || err);
+    console.error("FX apply failed", err.message || err);
     throw err;
   }
 }
 
-async function updateFxSettings(patch = {}) {
+function updateFxSettings(patch = {}) {
   const cur = readFx();
-  const next = { ...cur };
+  const next = { ...cur, source: "manual" };
 
   if (patch.currency != null) {
     const c = String(patch.currency).toUpperCase().trim();
@@ -207,16 +209,32 @@ async function updateFxSettings(patch = {}) {
   }
   if (patch.enabled != null) next.enabled = Boolean(patch.enabled);
 
+  if (patch.rate != null && String(patch.rate).trim() !== "") {
+    const rate = Number(String(patch.rate).replace(",", "."));
+    if (!Number.isFinite(rate) || rate <= 0) throw new Error("Курс должен быть числом > 0");
+    next.rate = rate;
+  }
+  if (patch.rate_scale != null && String(patch.rate_scale).trim() !== "") {
+    const scale = Number(patch.rate_scale);
+    if (!Number.isFinite(scale) || scale <= 0) throw new Error("Кратность курса должна быть > 0");
+    next.rate_scale = scale;
+  } else if (next.currency === "RUB" && (next.rate_scale == null || next.rate_scale === 1)) {
+    // keep existing scale; default RUB often 100 — don't force here
+  }
+
+  if (!next.rate_scale || next.rate_scale <= 0) next.rate_scale = 1;
+
   writeFx(next);
 
   if (next.enabled) {
-    // On enable or currency change: seed missing price_fx then recalculate BYN
+    if (!(Number(next.rate) > 0)) {
+      throw new Error("Чтобы включить привязку, укажите курс");
+    }
     return refreshFx({ forceSeed: true });
   }
   return { ok: true, fx: getFxPublic(next), disabled: true };
 }
 
-/** Recalculate one config after price_fx edit (uses stored rate). */
 function recalcConfigPrice(cfg, settings = readFx()) {
   if (!settings.enabled || settings.rate == null) return cfg;
   cfg.price = bynFromFx(
@@ -230,33 +248,15 @@ function recalcConfigPrice(cfg, settings = readFx()) {
 }
 
 function startFxScheduler() {
-  if (timer) clearInterval(timer);
-  const boot = async () => {
-    const s = readFx();
-    if (!s.enabled) {
-      console.log("FX scheduler idle (disabled)");
-      return;
-    }
-    try {
-      await refreshFx();
-    } catch (_) {
-      /* logged */
-    }
-  };
-  boot();
-  timer = setInterval(() => {
-    const s = readFx();
-    if (!s.enabled) return;
-    refreshFx().catch(() => {});
-  }, HOUR_MS);
-  if (timer.unref) timer.unref();
-  console.log("FX scheduler: every 1h (NBRB)");
+  const s = readFx();
+  console.log(
+    s.enabled
+      ? `FX manual mode ON ${s.currency}=${s.rate}/${s.rate_scale || 1}`
+      : "FX manual mode idle (disabled)"
+  );
 }
 
-function stopFxScheduler() {
-  if (timer) clearInterval(timer);
-  timer = null;
-}
+function stopFxScheduler() {}
 
 module.exports = {
   readFx,
