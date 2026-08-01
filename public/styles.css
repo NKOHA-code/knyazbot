@@ -1,15 +1,19 @@
 :root {
-  --bg: #12110f;
-  --bg-elev: #1c1a17;
-  --bg-soft: #242119;
-  --line: rgba(232, 208, 160, 0.14);
-  --text: #f4efe6;
-  --muted: #a89f90;
-  --gold: #d4b36a;
-  --gold-strong: #e6c57a;
-  --ok: #7fba7a;
-  --danger: #d97868;
-  --shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+  --bg: #02140a;
+  --bg-elev: #062416;
+  --bg-soft: #0a2f1c;
+  --line: rgba(212, 175, 55, 0.22);
+  --text: #f5f7f4;
+  --muted: #9bb5a6;
+  --emerald: #00a86b;
+  --emerald-deep: #004b23;
+  --forest: #006400;
+  --gold: #d4af37;
+  --gold-strong: #ffd700;
+  --gold-soft: #c5a059;
+  --ok: #5fd08a;
+  --danger: #e07a6a;
+  --shadow: 0 18px 40px rgba(0, 20, 8, 0.45);
   --radius: 18px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   font-family: "Manrope", sans-serif;
@@ -26,9 +30,10 @@ body {
   margin: 0;
   min-height: 100%;
   background:
-    radial-gradient(1200px 500px at 10% -10%, rgba(212, 179, 106, 0.18), transparent 55%),
-    radial-gradient(900px 420px at 100% 0%, rgba(90, 70, 40, 0.25), transparent 50%),
-    linear-gradient(180deg, #171511 0%, #0f0e0c 100%);
+    radial-gradient(900px 520px at 50% -8%, rgba(0, 168, 107, 0.28), transparent 58%),
+    radial-gradient(700px 380px at 100% 12%, rgba(212, 175, 55, 0.12), transparent 50%),
+    radial-gradient(600px 400px at 0% 40%, rgba(0, 75, 35, 0.45), transparent 55%),
+    linear-gradient(180deg, #04351f 0%, #02140a 42%, #010d07 100%);
 }
 
 body {
@@ -56,23 +61,50 @@ body {
 }
 
 .brand-mark {
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
   display: grid;
   place-items: center;
-  background: linear-gradient(145deg, #3a3224, #1b1814);
-  border: 1px solid var(--line);
-  color: var(--gold);
-  font-size: 22px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(0, 168, 107, 0.55), transparent 60%),
+    linear-gradient(145deg, #0a3d24, #02140a);
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.12), 0 8px 22px rgba(0, 0, 0, 0.35);
+  flex-shrink: 0;
+}
+
+.brand-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .brand-name {
   font-family: "Cormorant Garamond", serif;
   font-size: 28px;
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
   line-height: 1;
+  text-transform: uppercase;
+}
+
+.brand-name .knyaz {
+  background: linear-gradient(180deg, #ffe566 0%, var(--gold-strong) 35%, var(--gold) 70%, var(--gold-soft) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.35));
+}
+
+.brand-name .mobile {
+  color: #ffffff;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: lowercase;
+  margin-left: 2px;
 }
 
 .brand-sub {
@@ -108,8 +140,8 @@ body {
 }
 
 .cat.active {
-  background: linear-gradient(135deg, rgba(212, 179, 106, 0.28), rgba(212, 179, 106, 0.08));
-  border-color: rgba(212, 179, 106, 0.45);
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.32), rgba(0, 168, 107, 0.12));
+  border-color: rgba(212, 175, 55, 0.55);
   color: var(--gold-strong);
 }
 
@@ -122,7 +154,7 @@ body {
   text-align: left;
   width: 100%;
   border: 1px solid var(--line);
-  background: linear-gradient(180deg, rgba(36, 33, 25, 0.95), rgba(22, 20, 17, 0.95));
+  background: linear-gradient(180deg, rgba(8, 52, 32, 0.92), rgba(2, 20, 10, 0.96));
   border-radius: var(--radius);
   padding: 0;
   overflow: hidden;
@@ -136,8 +168,9 @@ body {
   position: relative;
   height: 190px;
   background:
-    radial-gradient(circle at 50% 20%, rgba(212, 179, 106, 0.16), transparent 55%),
-    #171511;
+    radial-gradient(circle at 50% 20%, rgba(0, 168, 107, 0.22), transparent 55%),
+    radial-gradient(circle at 80% 80%, rgba(212, 175, 55, 0.1), transparent 45%),
+    #02140a;
   overflow: hidden;
 }
 
@@ -157,7 +190,7 @@ body {
   justify-content: space-between;
   gap: 10px;
   align-items: flex-start;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .media {
@@ -165,9 +198,12 @@ body {
   margin: -4px -4px 14px;
   border-radius: 18px;
   overflow: hidden;
-  background: #14120f;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(0, 168, 107, 0.2), transparent 60%),
+    #02140a;
   aspect-ratio: 4 / 5;
   max-height: 360px;
+  border: 1px solid rgba(212, 175, 55, 0.18);
 }
 
 .media img {
@@ -176,9 +212,8 @@ body {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  transition: opacity 0.18s ease;
-}
   display: block;
+  transition: opacity 0.18s ease;
 }
 
 .media-glow {
@@ -193,14 +228,6 @@ body {
 
 .card:active {
   transform: scale(0.985);
-}
-
-.card-top {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  align-items: flex-start;
-  margin-bottom: 10px;
 }
 
 .card-name {
@@ -244,8 +271,8 @@ body {
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #1a140c;
-  background: var(--gold);
+  color: #02140a;
+  background: linear-gradient(180deg, #ffe566, var(--gold));
 }
 
 .view.hidden,
@@ -264,7 +291,7 @@ body {
 
 .detail {
   border: 1px solid var(--line);
-  background: rgba(28, 26, 23, 0.92);
+  background: linear-gradient(180deg, rgba(6, 40, 24, 0.94), rgba(2, 20, 10, 0.96));
   border-radius: 24px;
   padding: 18px;
   box-shadow: var(--shadow);
@@ -320,7 +347,7 @@ body {
 
 .color-btn.active {
   border-color: var(--gold-strong);
-  box-shadow: 0 0 0 3px rgba(212, 179, 106, 0.25);
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.28);
 }
 
 .choice-caption {
@@ -347,8 +374,8 @@ body {
 }
 
 .chip.active {
-  border-color: rgba(212, 179, 106, 0.55);
-  background: rgba(212, 179, 106, 0.14);
+  border-color: rgba(212, 175, 55, 0.6);
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(0, 168, 107, 0.12));
   color: var(--gold-strong);
 }
 
@@ -399,7 +426,8 @@ body {
 }
 
 .field input:focus {
-  border-color: rgba(212, 179, 106, 0.55);
+  border-color: rgba(212, 175, 55, 0.65);
+  box-shadow: 0 0 0 3px rgba(0, 168, 107, 0.15);
 }
 
 .cta {
@@ -409,10 +437,10 @@ body {
   border-radius: 16px;
   padding: 16px 18px;
   font: 700 16px Manrope, sans-serif;
-  color: #1a140c;
-  background: linear-gradient(135deg, #edd39a, #c9a45a);
+  color: #02140a;
+  background: linear-gradient(135deg, #ffe566, var(--gold-strong) 40%, var(--gold) 100%);
   cursor: pointer;
-  box-shadow: 0 12px 28px rgba(201, 164, 90, 0.28);
+  box-shadow: 0 12px 28px rgba(212, 175, 55, 0.32);
 }
 
 .cta:disabled {
@@ -433,7 +461,7 @@ body {
   left: 50%;
   bottom: calc(18px + var(--safe-bottom));
   transform: translateX(-50%);
-  background: #2a261f;
+  background: #0a2f1c;
   border: 1px solid var(--line);
   color: var(--text);
   padding: 12px 16px;
@@ -454,5 +482,33 @@ body {
 
   .cta:hover {
     transform: translateY(-1px);
+  }
+
+  .brand-name .knyaz {
+    animation: gold-sheen 4.5s ease-in-out infinite;
+  }
+
+  .brand-mark {
+    animation: mark-glow 3.8s ease-in-out infinite;
+  }
+}
+
+@keyframes gold-sheen {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.28));
+  }
+  50% {
+    filter: drop-shadow(0 0 14px rgba(255, 215, 0, 0.45));
+  }
+}
+
+@keyframes mark-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.12), 0 8px 22px rgba(0, 0, 0, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.35), 0 8px 26px rgba(0, 168, 107, 0.25);
   }
 }
