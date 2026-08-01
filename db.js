@@ -312,7 +312,7 @@ async function getOrderStats(period) {
       revenue_done: 0,
       period: period || "all",
       period_total: 0,
-      period_revenue: 0,
+      daily: [],
     };
   }
   const pc = periodClause(period);
@@ -361,6 +361,26 @@ async function getOrderStats(period) {
   const periodTotal = await p.query(`SELECT COUNT(*)::int AS n FROM orders ${baseWhere}`);
   const periodRev = await p.query(revenueDoneSql);
 
+  const daysBack = period === "today" ? 1 : period === "week" ? 7 : 14;
+  const series = await p.query(
+    `WITH days AS (
+       SELECT generate_series(
+         date_trunc('day', NOW()) - ($1::int - 1) * INTERVAL '1 day',
+         date_trunc('day', NOW()),
+         INTERVAL '1 day'
+       )::date AS d
+     )
+     SELECT to_char(days.d, 'DD.MM') AS label,
+            COALESCE(COUNT(o.id), 0)::int AS n,
+            COALESCE(SUM(CASE WHEN o.status = 'done' THEN o.price ELSE 0 END), 0)::int AS revenue
+     FROM days
+     LEFT JOIN orders o
+       ON o.created_at::date = days.d AND o.status <> 'archived'
+     GROUP BY days.d
+     ORDER BY days.d`,
+    [daysBack]
+  );
+
   const by_status = {};
   for (const row of byStatus.rows) by_status[row.status] = row.n;
   return {
@@ -377,6 +397,7 @@ async function getOrderStats(period) {
     period: period || "all",
     period_total: periodTotal.rows[0]?.n || 0,
     period_revenue: periodRev.rows[0]?.s || 0,
+    daily: series.rows,
   };
 }
 

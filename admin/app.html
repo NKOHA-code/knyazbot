@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <!-- admin-build=20260801brand -->
+  <!-- admin-build=20260801stats -->
   <style>
     :root {
       --bg: #02140a;
@@ -164,6 +164,92 @@
     .stat b {
       display: block; font-size: 1.45rem; margin-top: 6px;
       font-family: "Cormorant Garamond", serif; color: var(--gold-strong);
+    }
+    .stats-layout { display: grid; gap: 14px; }
+    .stats-kpis {
+      display: grid; gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+    }
+    .kpi {
+      position: relative; overflow: hidden;
+      background: linear-gradient(160deg, rgba(10, 55, 34, 0.98), rgba(2, 20, 10, 0.98));
+      border: 1px solid var(--line); border-radius: 18px; padding: 14px 14px 12px;
+      box-shadow: var(--shadow); min-height: 96px;
+    }
+    .kpi::after {
+      content: ""; position: absolute; right: -20px; top: -30px; width: 90px; height: 90px;
+      border-radius: 50%; background: radial-gradient(circle, rgba(212, 175, 55, 0.18), transparent 70%);
+      pointer-events: none;
+    }
+    .kpi .kpi-label { font-size: 0.75rem; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; font-weight: 650; }
+    .kpi .kpi-value {
+      margin-top: 8px; font-family: "Cormorant Garamond", serif;
+      font-size: 1.85rem; line-height: 1; color: var(--gold-strong); font-weight: 700;
+    }
+    .kpi .kpi-sub { margin-top: 6px; font-size: 0.78rem; color: var(--muted); }
+    .kpi.accent { border-color: rgba(212, 175, 55, 0.4); }
+    .stats-grid-2 {
+      display: grid; gap: 12px;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 860px) {
+      .stats-grid-2 { grid-template-columns: 1.1fr 0.9fr; }
+    }
+    .chart-card {
+      background: linear-gradient(180deg, rgba(8, 52, 32, 0.95), rgba(2, 20, 10, 0.98));
+      border: 1px solid var(--line); border-radius: 18px; padding: 14px 16px 16px;
+      box-shadow: var(--shadow);
+    }
+    .chart-card h3 {
+      margin: 0 0 12px; font-size: 0.95rem; font-weight: 650;
+    }
+    .bars {
+      display: flex; align-items: flex-end; gap: 6px; height: 140px;
+      padding-top: 8px; border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+    }
+    .bar-col { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+    .bar {
+      width: 100%; max-width: 28px; border-radius: 8px 8px 4px 4px;
+      background: linear-gradient(180deg, #ffe566, var(--gold) 55%, #0a6b45);
+      min-height: 4px; transition: height 0.35s ease;
+      box-shadow: 0 6px 16px rgba(212, 175, 55, 0.2);
+    }
+    .bar-label { font-size: 0.62rem; color: var(--muted); white-space: nowrap; }
+    .bar-n { font-size: 0.68rem; color: var(--gold-strong); font-weight: 650; min-height: 0.9em; }
+    .donut-wrap { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+    .donut {
+      width: 132px; height: 132px; border-radius: 50%;
+      background: conic-gradient(var(--warn) 0 1deg, rgba(255,255,255,.06) 1deg);
+      display: grid; place-items: center; flex-shrink: 0;
+      box-shadow: inset 0 0 0 1px rgba(212, 175, 55, 0.2);
+    }
+    .donut-hole {
+      width: 78px; height: 78px; border-radius: 50%;
+      background: #02140a; display: grid; place-items: center; text-align: center;
+      border: 1px solid rgba(212, 175, 55, 0.15);
+    }
+    .donut-hole b { font-family: "Cormorant Garamond", serif; font-size: 1.35rem; color: var(--gold-strong); display: block; line-height: 1; }
+    .donut-hole span { font-size: 0.65rem; color: var(--muted); }
+    .legend { display: grid; gap: 8px; flex: 1; min-width: 140px; }
+    .legend-row { display: flex; align-items: center; gap: 8px; font-size: 0.84rem; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .legend-row b { margin-left: auto; color: var(--gold-strong); font-family: "Cormorant Garamond", serif; font-size: 1.05rem; }
+    .hbar-list { display: grid; gap: 10px; }
+    .hbar-row { display: grid; gap: 4px; }
+    .hbar-top { display: flex; justify-content: space-between; gap: 8px; font-size: 0.84rem; }
+    .hbar-top b { color: var(--gold-strong); font-family: "Cormorant Garamond", serif; }
+    .hbar-track { height: 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.06); overflow: hidden; }
+    .hbar-fill {
+      height: 100%; border-radius: 999px;
+      background: linear-gradient(90deg, #0a6b45, var(--gold-strong));
+      min-width: 4px;
+    }
+    .stats-split {
+      display: grid; gap: 12px;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 860px) {
+      .stats-split { grid-template-columns: 1fr 1fr; }
     }
     .prod-block { margin-bottom: 14px; }
     .cfg-row, .mgr-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 6px 0; }
@@ -557,7 +643,7 @@
     <section class="panel" id="panel-stats">
       <div class="page-head">
         <h2>Статистика</h2>
-        <p>Выбери период — цифры, топы и повторные клиенты обновятся сразу.</p>
+        <p>Выбери период — карточки, графики и топы обновятся сразу.</p>
       </div>
       <div class="toolbar">
         <select id="stats-period">
@@ -568,12 +654,7 @@
         </select>
         <button type="button" class="primary" id="stats-refresh">Обновить</button>
       </div>
-      <div class="stats" id="stats-cards"></div>
-      <div class="list" style="margin-top:12px">
-        <div class="card"><h2 style="margin:0 0 8px;font-size:1rem">Топ моделей</h2><div id="stats-top" class="muted">—</div></div>
-        <div class="card"><h2 style="margin:0 0 8px;font-size:1rem">Топ цветов / памяти</h2><div id="stats-extra" class="muted">—</div></div>
-        <div class="card"><h2 style="margin:0 0 8px;font-size:1rem">Повторные клиенты</h2><div id="stats-repeats" class="muted">—</div></div>
-      </div>
+      <div id="stats-root"></div>
     </section>
 
     <section class="panel" id="panel-faq">
@@ -1584,6 +1665,8 @@
 
     /* stats */
     async function loadStats() {
+      const root = $("stats-root");
+      if (!root) return;
       try {
         const period = $("stats-period")?.value || "";
         const label =
@@ -1591,41 +1674,137 @@
           period === "week" ? "7 дней" :
           period === "month" ? "30 дней" : "Всё время";
         const s = await api("/api/stats" + (period ? `?period=${encodeURIComponent(period)}` : ""));
-        if (period) {
-          $("stats-cards").innerHTML = `
-            <div class="stat">Заявки · ${escapeHtml(label)}<b>${s.total}</b></div>
-            <div class="stat">Выручка · ${escapeHtml(label)}<b>${Number(s.revenue_done || 0).toLocaleString("ru-RU")}</b></div>
-            <div class="stat">Новые<b>${s.by_status?.new || 0}</b></div>
-            <div class="stat">В работе<b>${s.by_status?.in_progress || 0}</b></div>
-            <div class="stat">Готово<b>${s.by_status?.done || 0}</b></div>
-            <div class="stat">Отмена<b>${s.by_status?.cancelled || 0}</b></div>
-            <div class="stat">Сегодня (факт)<b>${s.today}</b></div>
-            <div class="stat">7 дней (факт)<b>${s.week}</b></div>
-            <div class="stat">30 дней (факт)<b>${s.month || 0}</b></div>`;
-        } else {
-          $("stats-cards").innerHTML = `
-            <div class="stat">Всего<b>${s.total}</b></div>
-            <div class="stat">Сегодня<b>${s.today}</b></div>
-            <div class="stat">7 дней<b>${s.week}</b></div>
-            <div class="stat">30 дней<b>${s.month || 0}</b></div>
-            <div class="stat">Новые<b>${s.by_status?.new || 0}</b></div>
-            <div class="stat">В работе<b>${s.by_status?.in_progress || 0}</b></div>
-            <div class="stat">Готово<b>${s.by_status?.done || 0}</b></div>
-            <div class="stat">Выручка (готово)<b>${Number(s.revenue_done || 0).toLocaleString("ru-RU")}</b></div>`;
+        const st = s.by_status || {};
+        const nNew = st.new || 0;
+        const nWork = st.in_progress || 0;
+        const nDone = st.done || 0;
+        const nCancel = st.cancelled || 0;
+        const statusTotal = Math.max(1, nNew + nWork + nDone + nCancel);
+        const pNew = (nNew / statusTotal) * 100;
+        const pWork = (nWork / statusTotal) * 100;
+        const pDone = (nDone / statusTotal) * 100;
+        const pCancel = (nCancel / statusTotal) * 100;
+        const donut = `conic-gradient(
+          #e0c35a 0 ${pNew}%,
+          #7eb8d4 ${pNew}% ${pNew + pWork}%,
+          #5fd08a ${pNew + pWork}% ${pNew + pWork + pDone}%,
+          #e07a6a ${pNew + pWork + pDone}% 100%
+        )`;
+
+        const daily = s.daily || [];
+        const maxN = Math.max(1, ...daily.map((d) => Number(d.n) || 0));
+        const bars = daily.length
+          ? daily.map((d) => {
+              const h = Math.max(4, Math.round((Number(d.n) || 0) / maxN * 100));
+              return `<div class="bar-col" title="${escapeAttr(d.label)}: ${d.n}">
+                <div class="bar-n">${d.n || ""}</div>
+                <div class="bar" style="height:${h}%"></div>
+                <div class="bar-label">${escapeHtml(d.label)}</div>
+              </div>`;
+            }).join("")
+          : `<div class="muted">Пока нет данных по дням</div>`;
+
+        function hbars(rows, nameKey) {
+          if (!rows?.length) return `<div class="muted">Пока нет данных</div>`;
+          const max = Math.max(1, ...rows.map((r) => Number(r.n) || 0));
+          return `<div class="hbar-list">${rows.map((r) => {
+            const w = Math.round((Number(r.n) || 0) / max * 100);
+            return `<div class="hbar-row">
+              <div class="hbar-top"><span>${escapeHtml(r[nameKey] || "—")}</span><b>${r.n}</b></div>
+              <div class="hbar-track"><div class="hbar-fill" style="width:${w}%"></div></div>
+            </div>`;
+          }).join("")}</div>`;
         }
-        $("stats-top").innerHTML = (s.top_products || []).length
-          ? s.top_products.map((p) => `<div>${escapeHtml(p.product_name)}: <b>${p.n}</b></div>`).join("")
-          : "Пока нет данных";
-        const colors = (s.top_colors || []).map((c) => `${escapeHtml(c.color_name)}: <b>${c.n}</b>`).join(" · ") || "—";
-        const stor = (s.top_storage || []).map((c) => `${escapeHtml(c.storage)}: <b>${c.n}</b>`).join(" · ") || "—";
-        $("stats-extra").innerHTML = `<div>Цвета: ${colors}</div><div style="margin-top:8px">Память: ${stor}</div>`;
-        $("stats-repeats").innerHTML = (s.repeat_phones || []).length
-          ? s.repeat_phones.map((r) =>
-              `<div><a href="#" data-repeat-phone="${escapeAttr(r.phone)}" style="color:var(--accent)">${escapeHtml(r.phone)}</a> · <b>${r.n}</b> заявок · ${fmtDate(r.last_at)}</div>`
-            ).join("")
-          : "Повторных нет";
+
+        root.innerHTML = `
+          <div class="stats-layout">
+            <div class="stats-kpis">
+              <div class="kpi accent">
+                <div class="kpi-label">Заявки · ${escapeHtml(label)}</div>
+                <div class="kpi-value">${s.total}</div>
+                <div class="kpi-sub">сегодня ${s.today} · 7д ${s.week} · 30д ${s.month || 0}</div>
+              </div>
+              <div class="kpi accent">
+                <div class="kpi-label">Выручка (готово)</div>
+                <div class="kpi-value">${Number(s.revenue_done || 0).toLocaleString("ru-RU")}</div>
+                <div class="kpi-sub">BYN по статусу «Готово»</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-label">Новые</div>
+                <div class="kpi-value">${nNew}</div>
+                <div class="kpi-sub">ждут обработки</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-label">В работе</div>
+                <div class="kpi-value">${nWork}</div>
+                <div class="kpi-sub">у менеджеров</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-label">Готово</div>
+                <div class="kpi-value">${nDone}</div>
+                <div class="kpi-sub">успешные сделки</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-label">Отмена</div>
+                <div class="kpi-value">${nCancel}</div>
+                <div class="kpi-sub">не состоялось</div>
+              </div>
+            </div>
+
+            <div class="stats-grid-2">
+              <div class="chart-card">
+                <h3>Заявки по дням</h3>
+                <div class="bars">${bars}</div>
+              </div>
+              <div class="chart-card">
+                <h3>Статусы</h3>
+                <div class="donut-wrap">
+                  <div class="donut" style="background:${donut}">
+                    <div class="donut-hole">
+                      <b>${nNew + nWork + nDone + nCancel}</b>
+                      <span>всего</span>
+                    </div>
+                  </div>
+                  <div class="legend">
+                    <div class="legend-row"><span class="legend-dot" style="background:#e0c35a"></span>Новые<b>${nNew}</b></div>
+                    <div class="legend-row"><span class="legend-dot" style="background:#7eb8d4"></span>В работе<b>${nWork}</b></div>
+                    <div class="legend-row"><span class="legend-dot" style="background:#5fd08a"></span>Готово<b>${nDone}</b></div>
+                    <div class="legend-row"><span class="legend-dot" style="background:#e07a6a"></span>Отмена<b>${nCancel}</b></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="stats-split">
+              <div class="chart-card">
+                <h3>Топ моделей</h3>
+                ${hbars(s.top_products, "product_name")}
+              </div>
+              <div class="chart-card">
+                <h3>Топ цветов</h3>
+                ${hbars(s.top_colors, "color_name")}
+              </div>
+              <div class="chart-card">
+                <h3>Топ памяти</h3>
+                ${hbars(s.top_storage, "storage")}
+              </div>
+              <div class="chart-card">
+                <h3>Повторные клиенты</h3>
+                ${(s.repeat_phones || []).length
+                  ? `<div class="hbar-list">${s.repeat_phones.map((r) => `
+                      <div class="hbar-row">
+                        <div class="hbar-top">
+                          <a href="#" data-repeat-phone="${escapeAttr(r.phone)}" style="color:var(--gold-strong)">${escapeHtml(r.phone)}</a>
+                          <b>${r.n}</b>
+                        </div>
+                        <div class="meta">${fmtDate(r.last_at)}</div>
+                      </div>`).join("")}</div>`
+                  : `<div class="muted">Повторных пока нет</div>`}
+              </div>
+            </div>
+          </div>`;
       } catch (ex) {
-        $("stats-cards").innerHTML = `<div class="error">${ex.message}</div>`;
+        root.innerHTML = `<div class="error">${ex.message}</div>`;
       }
     }
     $("stats-refresh") && ($("stats-refresh").onclick = () => loadStats());
