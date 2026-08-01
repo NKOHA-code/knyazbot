@@ -321,6 +321,17 @@
       border: 1px dashed rgba(212, 175, 55, 0.4); color: var(--gold-strong);
       cursor: pointer; background: rgba(212, 175, 55, 0.08);
     }
+    .emoji-picker { display: flex; flex-wrap: wrap; gap: 6px; }
+    .emoji-opt {
+      width: 40px; height: 40px; padding: 0; border-radius: 12px; cursor: pointer;
+      border: 1px solid var(--line); background: #062416; font-size: 1.15rem;
+      display: grid; place-items: center;
+    }
+    .emoji-opt.active {
+      border-color: rgba(212, 175, 55, 0.55);
+      background: linear-gradient(135deg, rgba(212, 175, 55, 0.22), rgba(0, 168, 107, 0.12));
+      box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+    }
     .p-footer { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); }
     .p-pill {
       font-size: 0.68rem; padding: 3px 7px; border-radius: 999px; font-weight: 600;
@@ -1079,9 +1090,24 @@
               <input data-field="name" value="${escapeAttr(p.name || "")}" />
             </div>
             <div class="field">
-              <label>Бейдж</label>
+              <label>Бейдж (текст)</label>
               <input data-field="badge" placeholder="Хит" value="${escapeAttr(p.badge || "")}" />
             </div>
+          </div>
+          <div class="field" style="margin-top:10px">
+            <label>Смайлик у бейджа</label>
+            <div class="emoji-picker" data-emoji-picker>
+              ${(() => {
+                const opts = ["", "🔥", "⭐", "✨", "💎", "🏆", "💥", "🆕", "👑", "⚡", "🎁", "❤️", "🚀", "❄️", "💰"];
+                const cur = p.badge_emoji || "";
+                return opts.map((em) => `
+                  <button type="button" class="emoji-opt ${cur === em ? "active" : ""}" data-badge-emoji="${escapeAttr(em)}" title="${em || "без смайлика"}">
+                    ${em || "∅"}
+                  </button>`).join("");
+              })()}
+              <input type="hidden" data-field="badge_emoji" value="${escapeAttr(p.badge_emoji || "")}" />
+            </div>
+            <div class="meta" style="margin-top:6px">Пример: ${escapeHtml((p.badge_emoji || "🔥") + " " + (p.badge || "Хит"))}</div>
           </div>
           <div class="field" style="margin-top:10px">
             <label>Категория</label>
@@ -1150,7 +1176,7 @@
                   <h3 class="tile-name">${escapeHtml(p.name)}</h3>
                   <div class="tile-price">${escapeHtml(priceRange(p))}</div>
                   <div class="tile-pills">
-                    ${p.badge ? `<span class="p-pill">${escapeHtml(p.badge)}</span>` : ""}
+                    ${p.badge ? `<span class="p-pill">${escapeHtml((p.badge_emoji ? p.badge_emoji + " " : "") + p.badge)}</span>` : ""}
                     ${p.hidden ? `<span class="p-pill dim">скрыт</span>` : ""}
                     <span class="p-pill dim">${escapeHtml(stockLabel(p))}</span>
                   </div>
@@ -1294,6 +1320,18 @@
         return;
       }
 
+      const emojiBtn = e.target.closest("[data-badge-emoji]");
+      if (emojiBtn) {
+        const picker = emojiBtn.closest("[data-emoji-picker]");
+        if (picker) {
+          picker.querySelectorAll(".emoji-opt").forEach((b) => b.classList.remove("active"));
+          emojiBtn.classList.add("active");
+          const hidden = picker.querySelector('[data-field="badge_emoji"]');
+          if (hidden) hidden.value = emojiBtn.dataset.badgeEmoji || "";
+        }
+        return;
+      }
+
       const delCat = e.target.closest("[data-del-cat]");
       const saveCfg = e.target.closest("[data-save-cfg]");
       const delCfg = e.target.closest("[data-del-cfg]");
@@ -1404,6 +1442,7 @@
             ...product,
             name: card.querySelector('[data-field="name"]').value,
             badge: card.querySelector('[data-field="badge"]').value || null,
+            badge_emoji: card.querySelector('[data-field="badge_emoji"]').value || null,
             gift: card.querySelector('[data-field="gift"]').value || null,
             note: card.querySelector('[data-field="note"]').value || null,
             category: card.querySelector('[data-field="category"]').value || product.category,

@@ -191,6 +191,11 @@
     img.src = src;
   }
 
+  function formatBadge(p) {
+    if (!p?.badge) return "";
+    return `${p.badge_emoji ? p.badge_emoji + " " : ""}${p.badge}`.trim();
+  }
+
   function renderList() {
     const products = productsForCategory();
     els.productList.innerHTML = products
@@ -200,7 +205,8 @@
           .map((c) => `<span class="swatch" style="background:${c.hex}" title="${c.name}"></span>`)
           .join("");
         const configs = p.configs.map((c) => c.storage).join(" · ");
-        const badge = p.badge ? `<span class="badge">${p.badge}</span>` : "<span></span>";
+        const badgeText = formatBadge(p);
+        const badge = badgeText ? `<span class="badge">${badgeText}</span>` : "<span></span>";
         const img = productImage(p);
         return `
           <button type="button" class="card" data-product="${p.id}">
@@ -230,8 +236,9 @@
     els.detailNote.textContent = p.note || "";
     setDetailImage(img, `${p.name} · ${color?.name || ""}`.trim());
     els.detailGlow.style.background = color?.hex || "transparent";
-    if (p.badge) {
-      els.detailBadge.textContent = p.badge;
+    const badgeText = formatBadge(p);
+    if (badgeText) {
+      els.detailBadge.textContent = badgeText;
       els.detailBadge.classList.remove("hidden");
     } else {
       els.detailBadge.classList.add("hidden");

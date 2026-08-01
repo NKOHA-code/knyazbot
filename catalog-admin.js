@@ -401,6 +401,7 @@ const IMPORT_HEADERS = [
   "category",
   "category_title",
   "badge",
+  "badge_emoji",
   "gift",
   "note",
   "color_id",
@@ -439,6 +440,7 @@ function buildCatalogTemplateBuffer() {
       category: "iphone",
       category_title: "iPhone",
       badge: "Хит",
+      badge_emoji: "🔥",
       gift: "чехол + защитное стекло",
       note: "Новый оригинал, заводская упаковка",
       color_id: "black",
@@ -454,6 +456,7 @@ function buildCatalogTemplateBuffer() {
       category: "iphone",
       category_title: "iPhone",
       badge: "Хит",
+      badge_emoji: "🔥",
       gift: "чехол + защитное стекло",
       note: "Новый оригинал, заводская упаковка",
       color_id: "black",
@@ -469,6 +472,7 @@ function buildCatalogTemplateBuffer() {
       category: "iphone",
       category_title: "iPhone",
       badge: "Хит",
+      badge_emoji: "🔥",
       gift: "чехол + защитное стекло",
       note: "Новый оригинал, заводская упаковка",
       color_id: "white",
@@ -486,6 +490,7 @@ function buildCatalogTemplateBuffer() {
       category: "id категории",
       category_title: "если категории нет — создастся",
       badge: "Хит / Новинка / пусто",
+      badge_emoji: "🔥 / ✨ / пусто",
       gift: "подзаголовок",
       note: "заметка",
       color_id: "black",
@@ -506,8 +511,9 @@ function buildCatalogTemplateBuffer() {
     ["2. Один и тот же id товара повторяй в нескольких строках для цветов и конфигов."],
     ["3. category — латиницей (iphone). category_title — название на русском/как на витрине."],
     ["4. in_stock: да / нет (или 1 / 0)."],
-    ["5. Фото после импорта загрузи в карточке товара (цвета сохранят старые фото, если id цвета совпал)."],
-    ["6. Строку-подсказку внизу шаблона перед импортом можно удалить."],
+    ["5. badge_emoji — смайлик рядом с бейджем (🔥, ✨, 💎…)."],
+    ["6. Фото после импорта загрузи в карточке товара (цвета сохранят старые фото, если id цвета совпал)."],
+    ["7. Строку-подсказку внизу шаблона перед импортом можно удалить."],
   ];
   const wsHelp = XLSX.utils.aoa_to_sheet(noteRows);
   wsHelp["!cols"] = [{ wch: 90 }];
@@ -561,6 +567,7 @@ function importCatalogFromExcel(buffer) {
         category,
         name,
         badge: cell(row, "badge", "бейдж") || null,
+        badge_emoji: cell(row, "badge_emoji", "emoji", "смайлик") || null,
         gift: cell(row, "gift", "подарок") || null,
         note: cell(row, "note", "заметка") || null,
         colors: existing ? [...(existing.colors || [])] : [],
@@ -573,9 +580,11 @@ function importCatalogFromExcel(buffer) {
     product.name = name;
     product.category = category;
     const badge = cell(row, "badge", "бейдж");
+    const badgeEmoji = cell(row, "badge_emoji", "emoji", "смайлик");
     const gift = cell(row, "gift", "подарок");
     const note = cell(row, "note", "заметка");
     if (badge !== "") product.badge = badge || null;
+    if (badgeEmoji !== "") product.badge_emoji = badgeEmoji || null;
     if (gift !== "") product.gift = gift || null;
     if (note !== "") product.note = note || null;
 
@@ -738,6 +747,7 @@ function buildCatalogExportBuffer() {
           category: p.category,
           category_title: (data.categories || []).find((c) => c.id === p.category)?.title || p.category,
           badge: p.badge || "",
+          badge_emoji: p.badge_emoji || "",
           gift: p.gift || "",
           note: p.note || "",
           color_id: color.id || "",

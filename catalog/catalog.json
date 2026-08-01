@@ -69,7 +69,8 @@
           "in_stock": true
         }
       ],
-      "image": "/images/colors/iphone-17-black.png"
+      "image": "/images/colors/iphone-17-black.png",
+      "badge_emoji": "🔥"
     },
     {
       "id": "iphone-17e",
@@ -112,7 +113,8 @@
           "in_stock": true
         }
       ],
-      "image": "/images/colors/iphone-17e-black.png"
+      "image": "/images/colors/iphone-17e-black.png",
+      "badge_emoji": "✨"
     },
     {
       "id": "iphone-17-pro",
@@ -210,7 +212,8 @@
           "in_stock": false
         }
       ],
-      "image": "/images/colors/iphone-17-promax-cosmic.png"
+      "image": "/images/colors/iphone-17-promax-cosmic.png",
+      "badge_emoji": "👑"
     },
     {
       "id": "iphone-16",
@@ -314,7 +317,8 @@
           "in_stock": true
         }
       ],
-      "image": "/images/colors/s25-ultra-titanium-black.png"
+      "image": "/images/colors/s25-ultra-titanium-black.png",
+      "badge_emoji": "⭐"
     },
     {
       "id": "s25-plus",
@@ -455,7 +459,8 @@
           "in_stock": true
         }
       ],
-      "image": "/images/colors/s25-fe-navy.png"
+      "image": "/images/colors/s25-fe-navy.png",
+      "badge_emoji": "💰"
     },
     {
       "id": "pixel-10",
@@ -645,7 +650,8 @@
           "in_stock": true
         }
       ],
-      "image": "/images/colors/macbook-neo-silver.png"
+      "image": "/images/colors/macbook-neo-silver.png",
+      "badge_emoji": "✨"
     }
   ]
 }
