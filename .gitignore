@@ -13,5 +13,7 @@ data/admin-password.json
 data/admin-actions.jsonl
 data/managers.json
 data/fx-settings.json
+data/catalog.json
+data/uploads/
 Dockerfile
 Dockerfile.custom.bak

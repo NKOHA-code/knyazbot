@@ -124,11 +124,11 @@ function parseInitData(initData, botToken) {
 }
 
 async function startHttp(botForNotify) {
-  console.log("КнязьMobile build=2026-08-01b (fx-and-daily-prices)");
+  console.log("КнязьMobile build=2026-08-01c (persist-catalog-uploads)");
   await initDb();
   try {
     const cat = loadCatalog();
-    console.log("catalog OK products=", cat.products.length);
+    console.log("catalog OK products=", cat.products.length, "file=data/catalog.json");
   } catch (err) {
     console.error("catalog preload failed", err.message);
   }
@@ -138,6 +138,8 @@ async function startHttp(botForNotify) {
   app.use(express.json({ limit: "32mb" }));
   app.use(express.urlencoded({ extended: false, limit: "32mb" }));
   mountAdmin(app);
+  // Persistent uploads (Bothost keeps /app/data across Git updates)
+  app.use("/images/uploads", express.static(path.join(__dirname, "data", "uploads")));
   app.use(express.static(path.join(__dirname, "public")));
 
   app.get("/api/health", async (_req, res) => {

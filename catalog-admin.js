@@ -3,17 +3,55 @@ const path = require("path");
 const crypto = require("crypto");
 const XLSX = require("xlsx");
 
-const CATALOG_CANDIDATES = [
-  path.join(__dirname, "catalog", "catalog.json"),
-  path.join(__dirname, "public", "catalog.json"),
-  path.join(__dirname, "data", "catalog.json"),
-];
+/** Seed in git (reset on Update from Git). Live catalog lives in data/ (Bothost persists /app/data). */
+const SEED_CATALOG = path.join(__dirname, "catalog", "catalog.json");
+const DATA_CATALOG = path.join(__dirname, "data", "catalog.json");
+const LEGACY_PUBLIC_CATALOG = path.join(__dirname, "public", "catalog.json");
+const UPLOADS_DIR = path.join(__dirname, "data", "uploads");
+const LEGACY_UPLOADS_DIR = path.join(__dirname, "public", "images", "uploads");
 
 const MANAGERS_FILE = path.join(__dirname, "data", "managers.json");
 
+function ensureDataDir() {
+  const dir = path.join(__dirname, "data");
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+
+/** Prefer persistent data/catalog.json; seed once from git catalog if missing. */
+function ensureCatalogFile() {
+  ensureDataDir();
+  if (fs.existsSync(DATA_CATALOG)) return DATA_CATALOG;
+
+  // One-time migrate from legacy locations (before git wipe preferred catalog/)
+  const legacy = [LEGACY_PUBLIC_CATALOG, SEED_CATALOG].find((p) => fs.existsSync(p));
+  if (legacy) {
+    fs.copyFileSync(legacy, DATA_CATALOG);
+    console.log("catalog seeded to data/catalog.json from", path.relative(__dirname, legacy));
+    return DATA_CATALOG;
+  }
+  throw new Error("catalog.json not found (need catalog/catalog.json seed)");
+}
+
 function catalogPath() {
-  const existing = CATALOG_CANDIDATES.find((p) => fs.existsSync(p));
-  return existing || CATALOG_CANDIDATES[0];
+  return ensureCatalogFile();
+}
+
+function migrateLegacyUploads() {
+  try {
+    if (!fs.existsSync(LEGACY_UPLOADS_DIR)) return;
+    ensureDataDir();
+    for (const name of fs.readdirSync(LEGACY_UPLOADS_DIR)) {
+      if (name === ".gitkeep") continue;
+      const from = path.join(LEGACY_UPLOADS_DIR, name);
+      const to = path.join(UPLOADS_DIR, name);
+      if (fs.statSync(from).isFile() && !fs.existsSync(to)) {
+        fs.copyFileSync(from, to);
+      }
+    }
+  } catch (err) {
+    console.error("upload migrate", err.message);
+  }
 }
 
 function readJsonFile(file) {
@@ -33,26 +71,18 @@ function writeJsonNoBom(file, data) {
 
 function loadRawCatalog() {
   const file = catalogPath();
-  if (!fs.existsSync(file)) throw new Error("catalog.json not found");
   return { file, data: readJsonFile(file) };
 }
 
-function syncCatalogCopies(data) {
-  const text = JSON.stringify(data, null, 2) + "\n";
-  const buf = Buffer.from(text, "utf8");
-  for (const p of CATALOG_CANDIDATES) {
-    const dir = path.dirname(p);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(p, buf);
-  }
-}
-
+/** Persist only to data/ — survives Bothost Update from Git. */
 function saveCatalog(data) {
-  syncCatalogCopies(data);
+  ensureDataDir();
+  writeJsonNoBom(DATA_CATALOG, data);
   return data;
 }
 
 function getCatalog() {
+  migrateLegacyUploads();
   const data = loadRawCatalog().data;
   data.products = (data.products || [])
     .map((p, i) => ({
@@ -302,9 +332,8 @@ function saveUploadedImage(buffer, filenameHint = "upload.png") {
   }
   const safeExt = detectImageExt(buffer, filenameHint);
   const name = `up-${Date.now()}-${crypto.randomBytes(4).toString("hex")}${safeExt}`;
-  const dir = path.join(__dirname, "public", "images", "uploads");
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, name), buffer);
+  ensureDataDir();
+  fs.writeFileSync(path.join(UPLOADS_DIR, name), buffer);
   return `/images/uploads/${name}`;
 }
 
