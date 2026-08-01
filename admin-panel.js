@@ -230,7 +230,7 @@ function mountAdmin(app) {
 
   function serveLoginPage(req, res) {
     if (readSession(parseCookies(req)[COOKIE_NAME])) {
-      res.redirect(302, `/a/${ADMIN_PATH}/app?v=20260726c`);
+      res.redirect(302, `/a/${ADMIN_PATH}/app?v=20260801brand`);
       return;
     }
     sendHtml(res, loginHtml);
@@ -249,7 +249,7 @@ function mountAdmin(app) {
       return res.status(401).json({ detail: "Неверный пароль" });
     }
     setSessionCookie(res, makeSessionCookie({ mid: ADMIN_CHAT_ID || null, name: "Админ" }));
-    return res.json({ ok: true, redirect: `/a/${ADMIN_PATH}/app?v=20260726c` });
+    return res.json({ ok: true, redirect: `/a/${ADMIN_PATH}/app?v=20260801brand` });
   });
 
   app.post("/a/:path/login/telegram", gatePath, (req, res) => {
@@ -271,7 +271,7 @@ function mountAdmin(app) {
       user.username ||
       String(user.id);
     setSessionCookie(res, makeSessionCookie({ mid: user.id, name }));
-    return res.json({ ok: true, redirect: `/a/${ADMIN_PATH}/app?v=20260726c`, manager: { id: user.id, name } });
+    return res.json({ ok: true, redirect: `/a/${ADMIN_PATH}/app?v=20260801brand`, manager: { id: user.id, name } });
   });
 
   app.post("/a/:path/logout", gatePath, (_req, res) => {

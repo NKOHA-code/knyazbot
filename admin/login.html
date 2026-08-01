@@ -6,33 +6,66 @@
   <meta name="robots" content="noindex,nofollow" />
   <title>Вход — админка</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #12110f; --card: #1c1a17; --text: #f4f1ea; --muted: #9a9488;
-      --accent: #d4b36a; --danger: #c45c5c; --line: rgba(255,255,255,0.08);
+      --bg: #02140a;
+      --text: #f5f7f4;
+      --muted: #9bb5a6;
+      --gold: #d4af37;
+      --gold-strong: #ffd700;
+      --line: rgba(212, 175, 55, 0.22);
+      --danger: #e07a6a;
     }
     * { box-sizing: border-box; }
     body {
-      margin: 0; min-height: 100vh; font-family: "Segoe UI", system-ui, sans-serif;
-      background: radial-gradient(ellipse at 50% 0%, rgba(212,179,106,0.12), transparent 50%), var(--bg);
+      margin: 0; min-height: 100vh; font-family: Manrope, "Segoe UI", system-ui, sans-serif;
+      background:
+        radial-gradient(700px 420px at 50% -10%, rgba(0, 168, 107, 0.28), transparent 55%),
+        radial-gradient(500px 300px at 100% 20%, rgba(212, 175, 55, 0.12), transparent 50%),
+        linear-gradient(180deg, #04351f 0%, #02140a 100%);
       color: var(--text); display: grid; place-items: center; padding: 24px;
     }
     .box {
-      width: min(100%, 400px); background: var(--card); border: 1px solid var(--line);
-      border-radius: 16px; padding: 28px 24px;
+      width: min(100%, 400px);
+      background: linear-gradient(180deg, rgba(8, 52, 32, 0.95), rgba(2, 20, 10, 0.98));
+      border: 1px solid var(--line);
+      border-radius: 20px; padding: 28px 24px;
+      box-shadow: 0 20px 50px rgba(0, 12, 6, 0.45);
     }
-    h1 { margin: 0 0 6px; font-size: 1.25rem; }
+    .brand {
+      display: flex; gap: 12px; align-items: center; margin-bottom: 18px;
+    }
+    .brand img {
+      width: 52px; height: 52px; border-radius: 14px; object-fit: cover;
+      border: 1px solid rgba(212, 175, 55, 0.45);
+    }
+    h1 {
+      margin: 0; font-family: "Cormorant Garamond", serif; font-size: 1.45rem; line-height: 1.1;
+    }
+    h1 .k {
+      background: linear-gradient(180deg, #ffe566, var(--gold-strong) 40%, var(--gold));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    h1 .m { color: #fff; text-transform: lowercase; font-weight: 600; }
     p { margin: 0 0 16px; color: var(--muted); font-size: 0.9rem; }
     label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 8px; }
     input {
-      width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line);
-      background: #14120f; color: var(--text); font-size: 1rem;
+      width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line);
+      background: #062416; color: var(--text); font-size: 1rem;
     }
     button {
-      width: 100%; margin-top: 12px; padding: 12px 14px; border: 0; border-radius: 10px;
-      background: var(--accent); color: #1a150c; font-weight: 600; cursor: pointer;
+      width: 100%; margin-top: 12px; padding: 12px 14px; border: 0; border-radius: 12px;
+      background: linear-gradient(135deg, #ffe566, var(--gold-strong) 40%, var(--gold));
+      color: #02140a; font-weight: 700; cursor: pointer;
+      box-shadow: 0 10px 24px rgba(212, 175, 55, 0.28);
     }
-    button.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
+    button.ghost {
+      background: transparent; color: var(--text); border: 1px solid var(--line);
+      box-shadow: none; font-weight: 600;
+    }
     button:disabled { opacity: 0.6; }
     .err { margin-top: 12px; color: var(--danger); font-size: 0.85rem; min-height: 1.2em; }
     .or { text-align: center; color: var(--muted); font-size: 0.8rem; margin: 14px 0 4px; }
@@ -40,8 +73,13 @@
 </head>
 <body>
   <div class="box">
-    <h1>КнязьMobile</h1>
-    <p>Служебный вход</p>
+    <div class="brand">
+      <img src="/images/brand.png" alt="" width="52" height="52" />
+      <div>
+        <h1><span class="k">Князь</span><span class="m">mobile</span></h1>
+        <p style="margin:4px 0 0">Служебный вход</p>
+      </div>
+    </div>
     <form id="form">
       <label for="password">Пароль</label>
       <input id="password" type="password" required autocomplete="current-password" />
@@ -79,29 +117,26 @@
         location.href = data.redirect || base + "/app";
       } catch (ex) {
         err.textContent = ex.message;
+      } finally {
         btn.disabled = false;
       }
     });
 
     document.getElementById("tg-btn").addEventListener("click", async () => {
       err.textContent = "";
-      const init = tg?.initData || "";
-      if (!init) {
-        err.textContent = "Откройте эту страницу как Mini App бота (или войдите паролем).";
-        return;
-      }
+      const btn = document.getElementById("tg-btn");
+      btn.disabled = true;
       try {
-        const data = await post(base + "/login/telegram", { init_data: init });
+        const initData = tg?.initData || "";
+        if (!initData) throw new Error("Откройте админку через кнопку в боте");
+        const data = await post(base + "/login/telegram", { init_data: initData });
         location.href = data.redirect || base + "/app";
       } catch (ex) {
         err.textContent = ex.message;
+      } finally {
+        btn.disabled = false;
       }
     });
-
-    // Auto Telegram login if opened inside WebApp
-    if (tg?.initData) {
-      document.getElementById("tg-btn").click();
-    }
   </script>
 </body>
 </html>
