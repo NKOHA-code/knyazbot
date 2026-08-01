@@ -191,9 +191,21 @@
     img.src = src;
   }
 
+  function defaultBadgeEmoji(badge) {
+    const map = {
+      Хит: "🔥",
+      Новинка: "✨",
+      Флагман: "👑",
+      Топ: "⭐",
+      Выгодно: "💰",
+    };
+    return map[String(badge || "").trim()] || "";
+  }
+
   function formatBadge(p) {
     if (!p?.badge) return "";
-    return `${p.badge_emoji ? p.badge_emoji + " " : ""}${p.badge}`.trim();
+    const em = p.badge_emoji || defaultBadgeEmoji(p.badge);
+    return `${em ? em + " " : ""}${p.badge}`.trim();
   }
 
   function renderList() {
