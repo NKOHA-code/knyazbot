@@ -182,7 +182,7 @@
     }
     .price-tile .stor{font-weight:650;min-width:64px}
     .price-tile input[data-storage]{width:90px;border-radius:10px;font-weight:650}
-    .price-tile input[type=number]{width:110px;border-radius:10px}
+    .price-tile input[data-price-fx]{width:100px;border-radius:10px}
     .price-tile .del-mini,.color-tile .del-mini{
       border:0;background:rgba(196,92,92,.12);color:var(--bad);border-radius:8px;padding:6px 8px;cursor:pointer;
     }
@@ -430,6 +430,48 @@
 
     <section class="panel" id="panel-settings">
       <div class="card" style="margin-bottom:12px">
+        <h2 style="margin:0 0 8px;font-size:1rem">Курс Нацбанка</h2>
+        <div class="meta" style="margin-bottom:10px">
+          Базовые цены хранятся в валюте (USD/EUR), витрина показывает BYN.
+          Курс НБРБ подтягивается каждый час.
+        </div>
+        <div id="fx-status" class="muted" style="margin-bottom:12px">—</div>
+        <div class="field-grid two">
+          <div class="field">
+            <label>Привязка</label>
+            <select id="fx-enabled">
+              <option value="0">Выкл</option>
+              <option value="1">Вкл</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Валюта базы</label>
+            <select id="fx-currency">
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="RUB">RUB</option>
+              <option value="CNY">CNY</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Наценка к курсу, %</label>
+            <input id="fx-markup" type="number" step="0.1" value="0" />
+          </div>
+          <div class="field">
+            <label>Округление BYN</label>
+            <select id="fx-round">
+              <option value="1">до 1</option>
+              <option value="5">до 5</option>
+              <option value="10">до 10</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-footer" style="border:0;padding-top:0;gap:8px;display:flex;flex-wrap:wrap">
+          <button type="button" class="primary" id="fx-save">Сохранить</button>
+          <button type="button" class="ghost" id="fx-refresh">Обновить курс сейчас</button>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:12px">
         <h2 style="margin:0 0 8px;font-size:1rem">Смена пароля</h2>
         <div class="meta" style="margin-bottom:10px">Новый пароль сохранится на сервере (перекроет ENV).</div>
         <div class="field-grid two">
@@ -467,6 +509,7 @@
       catFilter: "all",
       editProductId: null,
       me: null,
+      fx: null,
     };
 
     const $ = (id) => document.getElementById(id);
@@ -822,10 +865,15 @@
       $("prod-modal-body").innerHTML = "";
     }
     function editorHtml(p) {
+      const fxOn = Boolean(state.fx?.enabled || state.catalog?.fx?.enabled);
+      const cur = state.fx?.currency || state.catalog?.fx?.currency || "USD";
       const configs = (p.configs || []).map((c) => `
         <div class="price-tile" data-pid="${escapeAttr(p.id)}" data-cid="${escapeAttr(c.id)}">
           <input data-storage value="${escapeAttr(c.storage)}" placeholder="512GB" />
-          <input type="number" data-price value="${c.price || 0}" />
+          ${fxOn
+            ? `<input type="number" step="0.01" data-price-fx value="${c.price_fx != null ? c.price_fx : ""}" title="цена ${cur}" placeholder="${cur}" />
+               <span class="muted" style="font-size:.75rem;min-width:72px">${Number(c.price || 0)} BYN</span>`
+            : `<input type="number" data-price value="${c.price || 0}" />`}
           <label class="stock">
             <input type="checkbox" data-stock ${c.in_stock ? "checked" : ""} /> в наличии
           </label>
@@ -885,11 +933,11 @@
           </div>
         </div>
         <div class="p-section">
-          <div class="p-section-title">Конфиги / цены</div>
+          <div class="p-section-title">Конфиги / цены${fxOn ? ` (база ${escapeHtml(cur)} → BYN по НБРБ)` : ""}</div>
           <div class="price-grid">${configs || `<div class="muted">Нет конфигов</div>`}</div>
           <div class="add-row" data-pid="${escapeAttr(p.id)}">
             <input data-new-storage placeholder="512GB" />
-            <input type="number" data-new-price placeholder="цена" value="0" />
+            <input type="number" step="${fxOn ? "0.01" : "1"}" data-new-price placeholder="${fxOn ? cur : "цена BYN"}" value="0" />
             <button type="button" class="primary" data-add-cfg>Добавить конфиг</button>
           </div>
         </div>
@@ -922,6 +970,7 @@
       box.innerHTML = `<div class="empty" style="grid-column:1/-1">Загрузка…</div>`;
       try {
         state.catalog = await api("/api/catalog");
+        state.fx = state.catalog.fx || state.fx || null;
         fillProductFilter();
         renderCatSidebar();
         let products = state.catalog.products || [];
@@ -1100,13 +1149,19 @@
         }
         if (saveCfg) {
           const row = saveCfg.closest(".price-tile");
+          const fxOn = Boolean(state.fx?.enabled || state.catalog?.fx?.enabled);
+          const body = {
+            storage: row.querySelector("[data-storage]")?.value?.trim() || undefined,
+            in_stock: row.querySelector("[data-stock]").checked,
+          };
+          if (fxOn && row.querySelector("[data-price-fx]")) {
+            body.price_fx = Number(row.querySelector("[data-price-fx]").value);
+          } else {
+            body.price = Number(row.querySelector("[data-price]").value);
+          }
           await api(`/api/catalog/product/${row.dataset.pid}/config/${row.dataset.cid}`, {
             method: "PATCH",
-            body: JSON.stringify({
-              storage: row.querySelector("[data-storage]")?.value?.trim() || undefined,
-              price: Number(row.querySelector("[data-price]").value),
-              in_stock: row.querySelector("[data-stock]").checked,
-            }),
+            body: JSON.stringify(body),
           });
           toast("Цена/наличие сохранены");
           loadCatalog();
@@ -1123,11 +1178,15 @@
         if (addCfg) {
           const row = addCfg.closest(".add-row");
           const storage = row.querySelector("[data-new-storage]").value.trim();
-          const price = Number(row.querySelector("[data-new-price]").value) || 0;
+          const raw = Number(row.querySelector("[data-new-price]").value) || 0;
           if (!storage) return toast("Укажи память, например 512GB");
+          const fxOn = Boolean(state.fx?.enabled || state.catalog?.fx?.enabled);
+          const payload = fxOn
+            ? { storage, price_fx: raw, in_stock: true }
+            : { storage, price: raw, in_stock: true };
           await api(`/api/catalog/product/${row.dataset.pid}/config`, {
             method: "POST",
-            body: JSON.stringify({ storage, price, in_stock: true }),
+            body: JSON.stringify(payload),
           });
           toast("Конфиг добавлен");
           loadCatalog();
@@ -1325,7 +1384,39 @@
     });
 
     /* settings */
+    function renderFxStatus(fx) {
+      const el = $("fx-status");
+      if (!el) return;
+      if (!fx) {
+        el.textContent = "Нет данных";
+        return;
+      }
+      const rate =
+        fx.rate != null
+          ? `1 ${fx.currency} = ${(fx.byn_per_unit || fx.rate / (fx.rate_scale || 1)).toFixed(4)} BYN`
+          : "курс ещё не загружен";
+      const when = fx.updated_at ? fmtDate(fx.updated_at) : "—";
+      const err = fx.last_error ? ` · ошибка: ${fx.last_error}` : "";
+      el.innerHTML = fx.enabled
+        ? `<b>Вкл</b> · ${escapeHtml(rate)} · обновлено ${escapeHtml(when)}${escapeHtml(err)}`
+        : `<b>Выкл</b> · цены правятся вручную в BYN`;
+    }
+    async function loadFx() {
+      try {
+        const data = await api("/api/fx");
+        const fx = data.fx || {};
+        state.fx = fx;
+        $("fx-enabled").value = fx.enabled ? "1" : "0";
+        $("fx-currency").value = fx.currency || "USD";
+        $("fx-markup").value = fx.markup_percent ?? 0;
+        $("fx-round").value = String(fx.round_to || 1);
+        renderFxStatus(fx);
+      } catch (ex) {
+        $("fx-status").innerHTML = `<span class="error">${escapeHtml(ex.message)}</span>`;
+      }
+    }
     async function loadSettings() {
+      await loadFx();
       try {
         const data = await api("/api/actions?limit=80");
         $("actions-list").innerHTML = (data.items || []).length
@@ -1338,6 +1429,32 @@
       }
     }
     $("actions-refresh") && ($("actions-refresh").onclick = () => loadSettings());
+    $("fx-save") && ($("fx-save").onclick = async () => {
+      try {
+        const result = await api("/api/fx", {
+          method: "PUT",
+          body: JSON.stringify({
+            enabled: $("fx-enabled").value === "1",
+            currency: $("fx-currency").value,
+            markup_percent: Number($("fx-markup").value) || 0,
+            round_to: Number($("fx-round").value) || 1,
+          }),
+        });
+        state.fx = result.fx;
+        renderFxStatus(result.fx);
+        toast(result.fx?.enabled ? "Курс включён, цены пересчитаны" : "Привязка выключена");
+        if (state.tab === "catalog") loadCatalog();
+      } catch (ex) { toast(ex.message); }
+    });
+    $("fx-refresh") && ($("fx-refresh").onclick = async () => {
+      try {
+        const result = await api("/api/fx/refresh", { method: "POST", body: "{}" });
+        state.fx = result.fx;
+        renderFxStatus(result.fx);
+        toast("Курс обновлён");
+        if (state.tab === "catalog") loadCatalog();
+      } catch (ex) { toast(ex.message); }
+    });
     $("pwd-save") && ($("pwd-save").onclick = async () => {
       try {
         await api("/api/password", {

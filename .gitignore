@@ -12,5 +12,6 @@ bothost-values.txt
 data/admin-password.json
 data/admin-actions.jsonl
 data/managers.json
+data/fx-settings.json
 Dockerfile
 Dockerfile.custom.bak

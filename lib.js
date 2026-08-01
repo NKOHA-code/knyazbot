@@ -7,6 +7,7 @@ const { initDb, saveOrder } = require("./db");
 const { mountAdmin } = require("./admin-panel");
 const { buildAdminOrderNotify, adminPanelBaseUrl } = require("./admin-order-notify");
 const catalogAdmin = require("./catalog-admin");
+const { startFxScheduler } = require("./fx-rates");
 
 const PORT = Number(process.env.PORT || 3000);
 const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -123,7 +124,7 @@ function parseInitData(initData, botToken) {
 }
 
 async function startHttp(botForNotify) {
-  console.log("КнязьMobile build=2026-07-26c (photo-compress-bin)");
+  console.log("КнязьMobile build=2026-08-01a (nbrb-fx-hourly)");
   await initDb();
   try {
     const cat = loadCatalog();
@@ -131,6 +132,7 @@ async function startHttp(botForNotify) {
   } catch (err) {
     console.error("catalog preload failed", err.message);
   }
+  startFxScheduler();
   const app = express();
   // 32mb: photo as base64 is ~4/3 of file size; 15MB file ≈ 20MB+ JSON
   app.use(express.json({ limit: "32mb" }));

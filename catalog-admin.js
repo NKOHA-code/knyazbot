@@ -61,6 +61,11 @@ function getCatalog() {
       sort_order: Number.isFinite(Number(p.sort_order)) ? Number(p.sort_order) : i,
     }))
     .sort((a, b) => a.sort_order - b.sort_order || String(a.name).localeCompare(String(b.name), "ru"));
+  try {
+    data.fx = require("./fx-rates").getFxPublic();
+  } catch (_) {
+    data.fx = null;
+  }
   return data;
 }
 
@@ -130,9 +135,29 @@ function patchConfig(productId, configId, patch) {
   if (!product) throw new Error("product not found");
   const cfg = (product.configs || []).find((c) => c.id === configId);
   if (!cfg) throw new Error("config not found");
-  if (patch.price !== undefined) cfg.price = Number(patch.price) || 0;
-  if (patch.in_stock !== undefined) cfg.in_stock = Boolean(patch.in_stock);
   if (patch.storage !== undefined) cfg.storage = String(patch.storage);
+  if (patch.in_stock !== undefined) cfg.in_stock = Boolean(patch.in_stock);
+
+  let fx;
+  try {
+    fx = require("./fx-rates");
+  } catch (_) {
+    fx = null;
+  }
+  const settings = fx ? fx.readFx() : { enabled: false };
+
+  if (patch.price_fx !== undefined) {
+    cfg.price_fx = Math.round(Number(patch.price_fx) * 100) / 100 || 0;
+    if (settings.enabled && settings.rate != null) {
+      fx.recalcConfigPrice(cfg, settings);
+    }
+  } else if (patch.price !== undefined) {
+    cfg.price = Number(patch.price) || 0;
+    if (settings.enabled && settings.rate != null) {
+      cfg.price_fx = fx.fxFromByn(cfg.price, settings.rate, settings.rate_scale || 1);
+    }
+  }
+
   saveCatalog(data);
   return product;
 }
@@ -142,7 +167,7 @@ function storageToId(storage) {
   return m ? m[1] : slugifyId(storage) || `cfg-${Date.now()}`;
 }
 
-function addConfig(productId, { storage, price, in_stock } = {}) {
+function addConfig(productId, { storage, price, price_fx, in_stock } = {}) {
   const { data } = loadRawCatalog();
   const product = data.products.find((p) => p.id === productId);
   if (!product) throw new Error("product not found");
@@ -153,12 +178,27 @@ function addConfig(productId, { storage, price, in_stock } = {}) {
   if (product.configs.some((c) => c.id === id || c.storage === stor)) {
     throw new Error("Такой конфиг уже есть");
   }
-  product.configs.push({
+
+  let fx;
+  try {
+    fx = require("./fx-rates");
+  } catch (_) {
+    fx = null;
+  }
+  const settings = fx ? fx.readFx() : { enabled: false };
+  const cfg = {
     id,
     storage: stor,
     price: Number(price) || 0,
     in_stock: in_stock === undefined ? true : Boolean(in_stock),
-  });
+  };
+  if (price_fx !== undefined) {
+    cfg.price_fx = Math.round(Number(price_fx) * 100) / 100 || 0;
+    if (settings.enabled && settings.rate != null) fx.recalcConfigPrice(cfg, settings);
+  } else if (settings.enabled && settings.rate != null) {
+    cfg.price_fx = fx.fxFromByn(cfg.price, settings.rate, settings.rate_scale || 1);
+  }
+  product.configs.push(cfg);
   saveCatalog(data);
   return product;
 }
@@ -697,6 +737,7 @@ function buildCatalogExportBuffer() {
 module.exports = {
   getCatalog,
   saveCatalog,
+  loadRawCatalog,
   upsertProduct,
   deleteProduct,
   upsertCategory,

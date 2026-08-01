@@ -724,6 +724,42 @@ function mountAdmin(app) {
     }
   });
 
+  // —— FX / NBRB ——
+  app.get("/a/:path/api/fx", gatePath, requireAuth, (_req, res) => {
+    try {
+      const fx = require("./fx-rates");
+      res.json({ ok: true, fx: fx.getFxPublic() });
+    } catch (err) {
+      res.status(500).json({ detail: err.message });
+    }
+  });
+
+  app.put("/a/:path/api/fx", gatePath, requireAuth, async (req, res) => {
+    try {
+      const fx = require("./fx-rates");
+      const result = await fx.updateFxSettings(req.body || {});
+      logAction("fx.settings", JSON.stringify(req.body || {}), actorName(req));
+      res.json(result);
+    } catch (err) {
+      res.status(400).json({ detail: err.message || "Ошибка FX" });
+    }
+  });
+
+  app.post("/a/:path/api/fx/refresh", gatePath, requireAuth, async (req, res) => {
+    try {
+      const fx = require("./fx-rates");
+      const settings = fx.readFx();
+      if (!settings.enabled) {
+        return res.status(400).json({ detail: "Сначала включите привязку к курсу" });
+      }
+      const result = await fx.refreshFx({ forceSeed: true });
+      logAction("fx.refresh", `${result.fx?.currency} ${result.fx?.rate}`, actorName(req));
+      res.json(result);
+    } catch (err) {
+      res.status(400).json({ detail: err.message || "Не удалось обновить курс" });
+    }
+  });
+
   // —— Managers ——
   app.get("/a/:path/api/managers", gatePath, requireAuth, (_req, res) => {
     res.json({ items: catalogAdmin.loadManagers() });
