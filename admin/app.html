@@ -1397,18 +1397,33 @@
     async function loadStats() {
       try {
         const period = $("stats-period")?.value || "";
+        const label =
+          period === "today" ? "Сегодня" :
+          period === "week" ? "7 дней" :
+          period === "month" ? "30 дней" : "Всё время";
         const s = await api("/api/stats" + (period ? `?period=${encodeURIComponent(period)}` : ""));
-        $("stats-cards").innerHTML = `
-          <div class="stat">Всего<b>${s.total}</b></div>
-          <div class="stat">Сегодня<b>${s.today}</b></div>
-          <div class="stat">7 дней<b>${s.week}</b></div>
-          <div class="stat">30 дней<b>${s.month || 0}</b></div>
-          <div class="stat">Новые<b>${s.by_status?.new || 0}</b></div>
-          <div class="stat">В работе<b>${s.by_status?.in_progress || 0}</b></div>
-          <div class="stat">Готово<b>${s.by_status?.done || 0}</b></div>
-          <div class="stat">Выручка (готово)<b>${Number(s.revenue_done || 0).toLocaleString("ru-RU")}</b></div>
-          <div class="stat">Период · заявки<b>${s.period_total || 0}</b></div>
-          <div class="stat">Период · выручка<b>${Number(s.period_revenue || 0).toLocaleString("ru-RU")}</b></div>`;
+        if (period) {
+          $("stats-cards").innerHTML = `
+            <div class="stat">Заявки · ${escapeHtml(label)}<b>${s.total}</b></div>
+            <div class="stat">Выручка · ${escapeHtml(label)}<b>${Number(s.revenue_done || 0).toLocaleString("ru-RU")}</b></div>
+            <div class="stat">Новые<b>${s.by_status?.new || 0}</b></div>
+            <div class="stat">В работе<b>${s.by_status?.in_progress || 0}</b></div>
+            <div class="stat">Готово<b>${s.by_status?.done || 0}</b></div>
+            <div class="stat">Отмена<b>${s.by_status?.cancelled || 0}</b></div>
+            <div class="stat">Сегодня (факт)<b>${s.today}</b></div>
+            <div class="stat">7 дней (факт)<b>${s.week}</b></div>
+            <div class="stat">30 дней (факт)<b>${s.month || 0}</b></div>`;
+        } else {
+          $("stats-cards").innerHTML = `
+            <div class="stat">Всего<b>${s.total}</b></div>
+            <div class="stat">Сегодня<b>${s.today}</b></div>
+            <div class="stat">7 дней<b>${s.week}</b></div>
+            <div class="stat">30 дней<b>${s.month || 0}</b></div>
+            <div class="stat">Новые<b>${s.by_status?.new || 0}</b></div>
+            <div class="stat">В работе<b>${s.by_status?.in_progress || 0}</b></div>
+            <div class="stat">Готово<b>${s.by_status?.done || 0}</b></div>
+            <div class="stat">Выручка (готово)<b>${Number(s.revenue_done || 0).toLocaleString("ru-RU")}</b></div>`;
+        }
         $("stats-top").innerHTML = (s.top_products || []).length
           ? s.top_products.map((p) => `<div>${escapeHtml(p.product_name)}: <b>${p.n}</b></div>`).join("")
           : "Пока нет данных";
@@ -1425,6 +1440,15 @@
       }
     }
     $("stats-refresh") && ($("stats-refresh").onclick = () => loadStats());
+    $("stats-period") && ($("stats-period").onchange = () => loadStats());
+    $("period") && ($("period").onchange = () => {
+      state.period = $("period").value;
+      loadOrders();
+    });
+    $("product-filter") && ($("product-filter").onchange = () => {
+      state.product_id = $("product-filter").value;
+      loadOrders();
+    });
     $("panel-stats")?.addEventListener("click", (e) => {
       const a = e.target.closest("[data-repeat-phone]");
       if (!a) return;

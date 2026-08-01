@@ -316,11 +316,13 @@ async function getOrderStats(period) {
     };
   }
   const pc = periodClause(period);
-  const periodWhere = pc ? `WHERE ${pc} AND status <> 'archived'` : `WHERE status <> 'archived'`;
+  const baseWhere = pc
+    ? `WHERE ${pc} AND status <> 'archived'`
+    : `WHERE status <> 'archived'`;
 
-  const total = await p.query(`SELECT COUNT(*)::int AS n FROM orders WHERE status <> 'archived'`);
+  const total = await p.query(`SELECT COUNT(*)::int AS n FROM orders ${baseWhere}`);
   const byStatus = await p.query(
-    `SELECT status, COUNT(*)::int AS n FROM orders WHERE status <> 'archived' GROUP BY status`
+    `SELECT status, COUNT(*)::int AS n FROM orders ${baseWhere} GROUP BY status`
   );
   const today = await p.query(
     `SELECT COUNT(*)::int AS n FROM orders WHERE status <> 'archived' AND created_at >= date_trunc('day', NOW())`
@@ -333,33 +335,31 @@ async function getOrderStats(period) {
   );
   const top = await p.query(
     `SELECT product_id, product_name, COUNT(*)::int AS n
-     FROM orders WHERE status <> 'archived' GROUP BY product_id, product_name
+     FROM orders ${baseWhere} GROUP BY product_id, product_name
      ORDER BY n DESC LIMIT 10`
   );
   const topColors = await p.query(
     `SELECT color_name, COUNT(*)::int AS n FROM orders
-     WHERE status <> 'archived' AND COALESCE(color_name,'') <> ''
+     ${baseWhere} AND COALESCE(color_name,'') <> ''
      GROUP BY color_name ORDER BY n DESC LIMIT 8`
   );
   const topStorage = await p.query(
     `SELECT storage, COUNT(*)::int AS n FROM orders
-     WHERE status <> 'archived' AND COALESCE(storage,'') <> ''
+     ${baseWhere} AND COALESCE(storage,'') <> ''
      GROUP BY storage ORDER BY n DESC LIMIT 8`
   );
   const repeats = await p.query(
     `SELECT phone, COUNT(*)::int AS n, MAX(created_at) AS last_at
-     FROM orders WHERE status <> 'archived'
+     FROM orders ${baseWhere}
      GROUP BY phone HAVING COUNT(*) > 1
      ORDER BY n DESC, last_at DESC LIMIT 15`
   );
-  const revenueDone = await p.query(
-    `SELECT COALESCE(SUM(price),0)::int AS s FROM orders WHERE status = 'done'`
-  );
-  const periodTotal = await p.query(`SELECT COUNT(*)::int AS n FROM orders ${periodWhere}`);
-  const periodRevSql = pc
+  const revenueDoneSql = pc
     ? `SELECT COALESCE(SUM(price),0)::int AS s FROM orders WHERE ${pc} AND status = 'done'`
     : `SELECT COALESCE(SUM(price),0)::int AS s FROM orders WHERE status = 'done'`;
-  const periodRev = await p.query(periodRevSql);
+  const revenueDone = await p.query(revenueDoneSql);
+  const periodTotal = await p.query(`SELECT COUNT(*)::int AS n FROM orders ${baseWhere}`);
+  const periodRev = await p.query(revenueDoneSql);
 
   const by_status = {};
   for (const row of byStatus.rows) by_status[row.status] = row.n;
