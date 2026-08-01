@@ -336,13 +336,27 @@
             </div>
             <div class="side-card">
               <div class="p-section-title">Excel</div>
-              <div class="meta" style="margin-bottom:10px">Скачай шаблон, заполни строки (цвет + память), затем импортируй .xlsx</div>
+              <div class="meta" style="margin-bottom:10px">Полный каталог (товары, цвета, конфиги)</div>
               <div class="side-fields">
                 <a class="btn" id="xlsx-template" href="#" style="text-align:center;justify-content:center">Скачать шаблон</a>
                 <a class="btn" id="xlsx-export" href="#" style="text-align:center;justify-content:center">Экспорт каталога</a>
                 <label class="file-btn" style="display:block;margin:0">
                   Импорт Excel
                   <input type="file" id="xlsx-import" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden />
+                </label>
+              </div>
+            </div>
+            <div class="side-card">
+              <div class="p-section-title">Ежедневный прайс</div>
+              <div class="meta" style="margin-bottom:10px">
+                Только цены: скачай → поправь колонку price → импорт.
+                Не создаёт товары, только обновляет BYN (и USD-базу, если курс включён).
+              </div>
+              <div class="side-fields">
+                <a class="btn" id="prices-export" href="#" style="text-align:center;justify-content:center">Скачать прайс</a>
+                <label class="file-btn" style="display:block;margin:0">
+                  Импорт цен
+                  <input type="file" id="prices-import" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden />
                 </label>
               </div>
             </div>
@@ -430,10 +444,10 @@
 
     <section class="panel" id="panel-settings">
       <div class="card" style="margin-bottom:12px">
-        <h2 style="margin:0 0 8px;font-size:1rem">Курс Нацбанка</h2>
+        <h2 style="margin:0 0 8px;font-size:1rem">A · Курс Нацбанка</h2>
         <div class="meta" style="margin-bottom:10px">
-          Базовые цены хранятся в валюте (USD/EUR), витрина показывает BYN.
-          Курс НБРБ подтягивается каждый час.
+          База в USD/EUR, витрина в BYN. Курс НБРБ обновляется каждый час.
+          Для ежедневного прайса в рублях используй блок «Ежедневный прайс» в каталоге (B).
         </div>
         <div id="fx-status" class="muted" style="margin-bottom:12px">—</div>
         <div class="field-grid two">
@@ -1060,6 +1074,25 @@
         } catch (ex) { toast(ex.message); }
         return;
       }
+      if (e.target.id === "prices-export" || e.target.closest("#prices-export")) {
+        e.preventDefault();
+        try {
+          const res = await fetch(basePath() + "/api/catalog/prices.xlsx", { credentials: "same-origin" });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.detail || "Не удалось скачать прайс");
+          }
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "knyaz-prices.xlsx";
+          a.click();
+          URL.revokeObjectURL(url);
+          toast("Прайс скачан");
+        } catch (ex) { toast(ex.message); }
+        return;
+      }
       if (e.target.id === "bulk-prices" || e.target.closest("#bulk-prices")) {
         try {
           const result = await api("/api/catalog/bulk-prices", {
@@ -1275,6 +1308,28 @@
             body: JSON.stringify({ data: dataUrl, filename: file.name }),
           });
           toast(`Импорт: +${result.created}, обновлено ${result.updated}`);
+          loadCatalog();
+        } catch (ex) { toast(ex.message); }
+        return;
+      }
+      if (e.target.id === "prices-import" && e.target.files?.[0]) {
+        const file = e.target.files[0];
+        e.target.value = "";
+        try {
+          const dataUrl = await new Promise((resolve, reject) => {
+            const r = new FileReader();
+            r.onload = () => resolve(r.result);
+            r.onerror = reject;
+            r.readAsDataURL(file);
+          });
+          const result = await api("/api/catalog/import-prices", {
+            method: "POST",
+            body: JSON.stringify({ data: dataUrl, filename: file.name }),
+          });
+          const miss = result.missing_total
+            ? `, не найдено ${result.missing_total}`
+            : "";
+          toast(`Цены обновлены: ${result.updated}${miss}`);
           loadCatalog();
         } catch (ex) { toast(ex.message); }
         return;

@@ -734,6 +734,155 @@ function buildCatalogExportBuffer() {
   return XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
 }
 
+const PRICE_HEADERS = ["product_id", "name", "storage", "price", "price_fx", "in_stock"];
+
+/** Daily price list: one row per product + storage (no colors). */
+function buildPricesExportBuffer() {
+  const data = getCatalog();
+  const fx = data.fx || {};
+  const rows = [];
+  for (const p of data.products || []) {
+    for (const cfg of p.configs || []) {
+      rows.push({
+        product_id: p.id,
+        name: p.name,
+        storage: cfg.storage || "",
+        price: cfg.price || 0,
+        price_fx: cfg.price_fx != null ? cfg.price_fx : "",
+        in_stock: cfg.in_stock ? "да" : "нет",
+      });
+    }
+  }
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(rows.length ? rows : [{ product_id: "", storage: "", price: 0 }], {
+    header: PRICE_HEADERS,
+  });
+  ws["!cols"] = PRICE_HEADERS.map((h) => ({ wch: Math.max(12, h.length + 2) }));
+  XLSX.utils.book_append_sheet(wb, ws, "prices");
+  const notes = [
+    ["Ежедневный прайс (только цены)"],
+    ["1. Меняй колонку price (BYN на витрине)."],
+    ["2. Если включён курс НБРБ — можно править price_fx (USD/EUR), тогда BYN пересчитается."],
+    ["3. Не меняй product_id и storage — по ним ищется конфиг."],
+    ["4. Новые товары этим файлом не создаются — только обновление цен."],
+    [`5. Сейчас FX: ${fx.enabled ? "вкл " + (fx.currency || "USD") : "выкл"}.`],
+  ];
+  const wsHelp = XLSX.utils.aoa_to_sheet(notes);
+  wsHelp["!cols"] = [{ wch: 90 }];
+  XLSX.utils.book_append_sheet(wb, wsHelp, "инструкция");
+  return XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+}
+
+function buildPricesTemplateBuffer() {
+  return buildPricesExportBuffer();
+}
+
+function findConfigByStorage(product, storageRaw) {
+  const storage = String(storageRaw || "").trim();
+  if (!storage) return null;
+  const configs = product.configs || [];
+  let cfg = configs.find((c) => String(c.storage || "").trim().toLowerCase() === storage.toLowerCase());
+  if (cfg) return cfg;
+  const idHint = storageToConfigId(storage);
+  cfg = configs.find((c) => String(c.id) === idHint);
+  if (cfg) return cfg;
+  const digits = (storage.match(/(\d+)/) || [])[1];
+  if (digits) {
+    cfg = configs.find((c) => String(c.storage || "").includes(digits) || String(c.id) === digits);
+  }
+  return cfg || null;
+}
+
+function importPricesOnly(buffer) {
+  const wb = XLSX.read(buffer, { type: "buffer" });
+  const sheetName =
+    wb.SheetNames.find((n) => ["prices", "price", "цены", "прайс"].includes(String(n).toLowerCase())) ||
+    wb.SheetNames[0];
+  if (!sheetName) throw new Error("В файле нет листа");
+  const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: "" });
+  if (!rows.length) throw new Error("Пустой файл — нет строк");
+
+  let fxMod = null;
+  let fxSettings = { enabled: false };
+  try {
+    fxMod = require("./fx-rates");
+    fxSettings = fxMod.readFx();
+  } catch (_) {
+    /* optional */
+  }
+
+  const { data } = loadRawCatalog();
+  const byId = new Map((data.products || []).map((p) => [p.id, p]));
+  let updated = 0;
+  const missing = [];
+
+  for (const row of rows) {
+    const productId = slugifyId(cell(row, "product_id", "id", "ID"));
+    const storage = cell(row, "storage", "память", "config", "конфиг");
+    if (!productId || !storage) continue;
+    if (productId.startsWith("←")) continue;
+
+    const product = byId.get(productId);
+    if (!product) {
+      missing.push(`${productId} / ${storage}`);
+      continue;
+    }
+    const cfg = findConfigByStorage(product, storage);
+    if (!cfg) {
+      missing.push(`${productId} / ${storage}`);
+      continue;
+    }
+
+    const priceRaw = cell(row, "price", "цена", "price_byn");
+    const fxRaw = cell(row, "price_fx", "usd", "eur", "цена_fx", "base_price");
+    const stockRaw = cell(row, "in_stock", "наличие", "stock");
+
+    let touched = false;
+    if (fxRaw !== "") {
+      const fxVal = Number(String(fxRaw).replace(",", "."));
+      if (Number.isFinite(fxVal)) {
+        cfg.price_fx = Math.round(fxVal * 100) / 100;
+        if (fxSettings.enabled && fxSettings.rate != null && fxMod) {
+          fxMod.recalcConfigPrice(cfg, fxSettings);
+        }
+        touched = true;
+      }
+    } else if (priceRaw !== "") {
+      const byn = Number(String(priceRaw).replace(",", "."));
+      if (Number.isFinite(byn)) {
+        cfg.price = Math.max(0, Math.round(byn));
+        if (fxSettings.enabled && fxSettings.rate != null && fxMod) {
+          cfg.price_fx = fxMod.fxFromByn(cfg.price, fxSettings.rate, fxSettings.rate_scale || 1);
+        }
+        touched = true;
+      }
+    }
+
+    if (stockRaw !== "") {
+      cfg.in_stock = parseStock(stockRaw);
+      touched = true;
+    }
+
+    if (touched) {
+      updated += 1;
+      const priced = (product.configs || []).map((c) => c.price).filter((n) => n > 0);
+      if (priced.length) {
+        const min = Math.min(...priced);
+        product.min_price = min;
+        product.price_from = `от ${min} BYN`;
+      }
+    }
+  }
+
+  saveCatalog(data);
+  return {
+    ok: true,
+    updated,
+    missing: missing.slice(0, 30),
+    missing_total: missing.length,
+  };
+}
+
 module.exports = {
   getCatalog,
   saveCatalog,
@@ -751,7 +900,10 @@ module.exports = {
   saveUploadedImage,
   buildCatalogTemplateBuffer,
   buildCatalogExportBuffer,
+  buildPricesExportBuffer,
+  buildPricesTemplateBuffer,
   importCatalogFromExcel,
+  importPricesOnly,
   duplicateProduct,
   setProductHidden,
   moveProduct,

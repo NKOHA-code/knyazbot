@@ -124,7 +124,7 @@ function parseInitData(initData, botToken) {
 }
 
 async function startHttp(botForNotify) {
-  console.log("КнязьMobile build=2026-08-01a (nbrb-fx-hourly)");
+  console.log("КнязьMobile build=2026-08-01b (fx-and-daily-prices)");
   await initDb();
   try {
     const cat = loadCatalog();
