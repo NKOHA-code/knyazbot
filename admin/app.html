@@ -299,10 +299,30 @@
     .side-card {
       background: linear-gradient(180deg, rgba(8, 52, 32, 0.95), rgba(2, 20, 10, 0.98));
       border: 1px solid rgba(212, 175, 55, 0.2);
-      border-radius: 18px; padding: 14px;
+      border-radius: 18px; padding: 0;
       box-shadow: var(--shadow);
+      overflow: hidden;
     }
-    .side-card .p-section-title { margin-bottom: 12px; }
+    .side-card-toggle {
+      display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 8px;
+      margin: 0; padding: 12px 14px; border: 0; cursor: pointer; font: inherit; text-align: left;
+      background: transparent; color: inherit;
+    }
+    .side-card-toggle:hover { background: rgba(255, 255, 255, 0.03); }
+    .side-card-toggle .p-section-title {
+      margin: 0; flex: 1;
+    }
+    .side-card-toggle .chev {
+      flex-shrink: 0; color: var(--muted); font-size: 0.75rem; line-height: 1;
+    }
+    .side-card-toggle .chev::after { content: "▾"; }
+    .side-card.is-open .side-card-toggle .chev::after { content: "▴"; }
+    .side-card-body {
+      display: none;
+      padding: 0 14px 14px;
+    }
+    .side-card.is-open .side-card-body { display: block; }
+    .side-card .p-section-title { margin-bottom: 0; }
     .cat-item {
       display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 12px;
       border: 1px solid transparent; margin-bottom: 6px; cursor: pointer;
@@ -541,95 +561,115 @@
             <span class="chev"></span>
           </button>
           <div class="cat-tools-body">
-            <div class="help-box">
-              <b>Как обновлять цены:</b><br />
-              A — свой курс в «Настройках» (USD/EUR → BYN).<br />
-              B — «Ежедневный прайс»: скачал → поправил → импорт.
-            </div>
-            <div class="side-card">
-              <div class="p-section-title">Категории</div>
-              <div id="cat-list"></div>
-              <div class="side-fields">
-                <div class="field">
-                  <label>Новая категория</label>
-                  <input id="new-cat-title" placeholder="Например: Xiaomi" />
-                </div>
-                <div class="row2">
+            <div class="side-card" data-card="categories">
+              <button type="button" class="side-card-toggle" aria-expanded="false">
+                <span class="p-section-title">Категории</span>
+                <span class="chev" aria-hidden="true"></span>
+              </button>
+              <div class="side-card-body">
+                <div id="cat-list"></div>
+                <div class="side-fields">
                   <div class="field">
-                    <label>ID (необязательно)</label>
-                    <input id="new-cat-id" placeholder="xiaomi" />
+                    <label>Новая категория</label>
+                    <input id="new-cat-title" placeholder="Например: Xiaomi" />
+                  </div>
+                  <div class="row2">
+                    <div class="field">
+                      <label>ID (необязательно)</label>
+                      <input id="new-cat-id" placeholder="xiaomi" />
+                    </div>
+                    <div class="field">
+                      <label>Иконка</label>
+                      <input id="new-cat-emoji" placeholder="✦" maxlength="4" />
+                    </div>
+                  </div>
+                  <button type="button" class="primary" id="new-cat-btn" style="width:100%">Добавить категорию</button>
+                </div>
+              </div>
+            </div>
+            <div class="side-card" data-card="excel">
+              <button type="button" class="side-card-toggle" aria-expanded="false">
+                <span class="p-section-title">Excel · полный каталог</span>
+                <span class="chev" aria-hidden="true"></span>
+              </button>
+              <div class="side-card-body">
+                <div class="meta" style="margin-bottom:10px">Товары, цвета и конфиги целиком</div>
+                <div class="side-fields">
+                  <a class="btn" id="xlsx-template" href="#" style="text-align:center;justify-content:center">Скачать шаблон</a>
+                  <a class="btn" id="xlsx-export" href="#" style="text-align:center;justify-content:center">Экспорт каталога</a>
+                  <label class="file-btn" style="display:block;margin:0">
+                    Импорт Excel
+                    <input type="file" id="xlsx-import" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden />
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="side-card" data-card="prices">
+              <button type="button" class="side-card-toggle" aria-expanded="false">
+                <span class="p-section-title">B · Ежедневный прайс</span>
+                <span class="chev" aria-hidden="true"></span>
+              </button>
+              <div class="side-card-body">
+                <div class="meta" style="margin-bottom:10px">
+                  Только цены: скачай → колонка price → импорт. Новые товары не создаёт.
+                </div>
+                <div class="side-fields">
+                  <a class="btn" id="prices-export" href="#" style="text-align:center;justify-content:center">Скачать прайс</a>
+                  <label class="file-btn" style="display:block;margin:0">
+                    Импорт цен
+                    <input type="file" id="prices-import" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden />
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="side-card" data-card="bulk">
+              <button type="button" class="side-card-toggle" aria-expanded="false">
+                <span class="p-section-title">Массовые цены</span>
+                <span class="chev" aria-hidden="true"></span>
+              </button>
+              <div class="side-card-body">
+                <div class="side-fields">
+                  <div class="field">
+                    <label>Режим</label>
+                    <select id="bulk-mode">
+                      <option value="percent">± %</option>
+                      <option value="add">± BYN</option>
+                      <option value="set">Задать цену</option>
+                    </select>
                   </div>
                   <div class="field">
-                    <label>Иконка</label>
-                    <input id="new-cat-emoji" placeholder="✦" maxlength="4" />
+                    <label>Значение</label>
+                    <input id="bulk-value" type="number" value="0" />
                   </div>
+                  <div class="field">
+                    <label>Категория (опц.)</label>
+                    <select id="bulk-cat"><option value="">Все</option></select>
+                  </div>
+                  <button type="button" class="primary" id="bulk-prices" style="width:100%">Применить</button>
                 </div>
-                <button type="button" class="primary" id="new-cat-btn" style="width:100%">Добавить категорию</button>
               </div>
             </div>
-            <div class="side-card">
-              <div class="p-section-title">Excel · полный каталог</div>
-              <div class="meta" style="margin-bottom:10px">Товары, цвета и конфиги целиком</div>
-              <div class="side-fields">
-                <a class="btn" id="xlsx-template" href="#" style="text-align:center;justify-content:center">Скачать шаблон</a>
-                <a class="btn" id="xlsx-export" href="#" style="text-align:center;justify-content:center">Экспорт каталога</a>
-                <label class="file-btn" style="display:block;margin:0">
-                  Импорт Excel
-                  <input type="file" id="xlsx-import" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden />
-                </label>
-              </div>
-            </div>
-            <div class="side-card">
-              <div class="p-section-title">B · Ежедневный прайс</div>
-              <div class="meta" style="margin-bottom:10px">
-                Только цены: скачай → колонка price → импорт. Новые товары не создаёт.
-              </div>
-              <div class="side-fields">
-                <a class="btn" id="prices-export" href="#" style="text-align:center;justify-content:center">Скачать прайс</a>
-                <label class="file-btn" style="display:block;margin:0">
-                  Импорт цен
-                  <input type="file" id="prices-import" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden />
-                </label>
-              </div>
-            </div>
-            <div class="side-card">
-              <div class="p-section-title">Массовые цены</div>
-              <div class="side-fields">
-                <div class="field">
-                  <label>Режим</label>
-                  <select id="bulk-mode">
-                    <option value="percent">± %</option>
-                    <option value="add">± BYN</option>
-                    <option value="set">Задать цену</option>
-                  </select>
+            <div class="side-card" data-card="new-product">
+              <button type="button" class="side-card-toggle" aria-expanded="false">
+                <span class="p-section-title">Новый товар</span>
+                <span class="chev" aria-hidden="true"></span>
+              </button>
+              <div class="side-card-body">
+                <div class="side-fields">
+                  <div class="field">
+                    <label>ID</label>
+                    <input id="new-id" placeholder="iphone-18" />
+                  </div>
+                  <div class="field">
+                    <label>Название</label>
+                    <input id="new-name" placeholder="iPhone 18" />
+                  </div>
+                  <div class="field">
+                    <label>Категория</label>
+                    <select id="new-cat"></select>
+                  </div>
+                  <button type="button" class="primary" id="new-prod" style="width:100%">Добавить товар</button>
                 </div>
-                <div class="field">
-                  <label>Значение</label>
-                  <input id="bulk-value" type="number" value="0" />
-                </div>
-                <div class="field">
-                  <label>Категория (опц.)</label>
-                  <select id="bulk-cat"><option value="">Все</option></select>
-                </div>
-                <button type="button" class="primary" id="bulk-prices" style="width:100%">Применить</button>
-              </div>
-            </div>
-            <div class="side-card">
-              <div class="p-section-title">Новый товар</div>
-              <div class="side-fields">
-                <div class="field">
-                  <label>ID</label>
-                  <input id="new-id" placeholder="iphone-18" />
-                </div>
-                <div class="field">
-                  <label>Название</label>
-                  <input id="new-name" placeholder="iPhone 18" />
-                </div>
-                <div class="field">
-                  <label>Категория</label>
-                  <select id="new-cat"></select>
-                </div>
-                <button type="button" class="primary" id="new-prod" style="width:100%">Добавить товар</button>
               </div>
             </div>
           </div>
@@ -2054,6 +2094,38 @@
     });
     syncCatToolsOpen();
     window.addEventListener("resize", syncCatToolsOpen);
+
+    const SIDE_CARDS_KEY = "knyaz-admin-side-cards";
+    function readSideCardsState() {
+      try {
+        return JSON.parse(localStorage.getItem(SIDE_CARDS_KEY) || "{}") || {};
+      } catch (_) {
+        return {};
+      }
+    }
+    function writeSideCardsState(map) {
+      try { localStorage.setItem(SIDE_CARDS_KEY, JSON.stringify(map)); } catch (_) {}
+    }
+    function setSideCardOpen(card, open) {
+      card.classList.toggle("is-open", open);
+      const btn = card.querySelector(".side-card-toggle");
+      if (btn) btn.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+    function initSideCards() {
+      const saved = readSideCardsState();
+      document.querySelectorAll(".side-card[data-card]").forEach((card) => {
+        const id = card.dataset.card;
+        setSideCardOpen(card, Boolean(saved[id]));
+        card.querySelector(".side-card-toggle")?.addEventListener("click", () => {
+          const next = !card.classList.contains("is-open");
+          setSideCardOpen(card, next);
+          const map = readSideCardsState();
+          map[id] = next;
+          writeSideCardsState(map);
+        });
+      });
+    }
+    initSideCards();
 
     async function boot() {
       try {
