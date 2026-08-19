@@ -1,9 +1,21 @@
 ﻿/**
  * Bothost CMD: node /app/http-wrapper.js & node app.js
- * This process owns HTTP (PORT) for Traefik / Mini App.
- *
- * Note: during Docker BUILD Bothost overwrites this file with a stub,
- * but at RUNTIME git is mounted over /app — so this repo file wins.
+ * If the host runs only http-wrapper.js, we spawn app.js for Telegram polling.
  */
 process.env.BOTHOST_ROLE = "http";
+
+const path = require("path");
+const { spawn } = require("child_process");
+
+if (process.env.BOTHOST_SPAWN_BOT !== "0" && process.env.BOT_TOKEN) {
+  const botEntry = path.join(__dirname, "app.js");
+  const child = spawn(process.execPath, [botEntry], {
+    stdio: "inherit",
+    env: { ...process.env, BOTHOST_SPAWN_BOT: "0" },
+  });
+  child.on("exit", (code, signal) => {
+    console.error(`bot process stopped code=${code} signal=${signal || ""}`);
+  });
+}
+
 require("./lib.js");

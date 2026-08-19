@@ -124,7 +124,7 @@ function parseInitData(initData, botToken) {
 }
 
 async function startHttp(botForNotify) {
-  console.log("КнязьMobile build=2026-08-19 (hybrid-sim-pricing)");
+  console.log("КнязьMobile build=2026-08-19b (start-fix)");
   await initDb();
   try {
     const cat = loadCatalog();
@@ -144,6 +144,7 @@ async function startHttp(botForNotify) {
 
   app.get("/api/health", async (_req, res) => {
     let db = false;
+    let bot = false;
     try {
       const { getPool } = require("./db");
       const pool = getPool();
@@ -154,7 +155,16 @@ async function startHttp(botForNotify) {
     } catch (_) {
       db = false;
     }
-    res.json({ ok: true, role: "http", db });
+    if (BOT_TOKEN) {
+      try {
+        const r = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getWebhookInfo`);
+        const data = await r.json();
+        bot = Boolean(data.ok);
+      } catch (_) {
+        bot = false;
+      }
+    }
+    res.json({ ok: true, role: "http", db, bot_token: Boolean(BOT_TOKEN) });
   });
   app.get("/health", (_req, res) => res.json({ ok: true, role: "http" }));
   app.get("/api/catalog", (_req, res) => {
@@ -306,9 +316,20 @@ async function startHttp(botForNotify) {
 
 const BRAND_IMAGE = path.join(__dirname, "public", "images", "brand.png");
 
+function escapeHtml(s) {
+  return String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 function buildStartMessage() {
+  const shop = escapeHtml(SHOP_NAME);
+  const address = escapeHtml(SHOP_ADDRESS);
+  const phone = escapeHtml(MANAGER_PHONE);
+  const manager = escapeHtml(MANAGER_USERNAME);
   return (
-    `<b>👑 ${SHOP_NAME}</b>\n` +
+    `<b>👑 ${shop}</b>\n` +
     `<i>Техника Apple · Samsung · аксессуары</i>\n\n` +
     `✦ ───────────────── ✦\n\n` +
     `📱 <b>Каталог</b> — актуальные цены и наличие\n` +
@@ -317,19 +338,43 @@ function buildStartMessage() {
     `🛡 <b>Гарантия</b> — 12 месяцев + сервис\n` +
     `💳 <b>Оплата</b> — карта, рассрочка, лизинг\n\n` +
     `✦ ───────────────── ✦\n\n` +
-    `📍 ${SHOP_ADDRESS}\n` +
-    `📞 ${MANAGER_PHONE} · @${MANAGER_USERNAME}\n\n` +
+    `📍 ${address}\n` +
+    `📞 ${phone} · @${manager}\n\n` +
     `Нажмите <b>«📱 Открыть витрину»</b> 👇`
   );
 }
 
-async function sendStartMessage(ctx, mainKeyboard) {
-  const opts = { parse_mode: "HTML", reply_markup: mainKeyboard() };
-  if (fs.existsSync(BRAND_IMAGE)) {
-    await ctx.replyWithPhoto(new InputFile(BRAND_IMAGE), { caption: buildStartMessage(), ...opts });
-    return;
+async function sendStartMessage(ctx, mainKeyboard, catalogKeyboard) {
+  const text = buildStartMessage();
+  const parseOpts = { parse_mode: "HTML" };
+
+  try {
+    if (fs.existsSync(BRAND_IMAGE)) {
+      await ctx.replyWithPhoto(new InputFile(BRAND_IMAGE), { caption: text, ...parseOpts });
+    } else {
+      await ctx.reply(text, parseOpts);
+    }
+  } catch (err) {
+    const detail = err?.error?.description || err?.description || err?.message || err;
+    console.error("start photo/text failed:", detail);
+    try {
+      await ctx.reply(`${SHOP_NAME}\n\nОткройте витрину — кнопка ниже.`);
+    } catch (err2) {
+      console.error("start plain fallback failed:", err2?.message || err2);
+    }
   }
-  await ctx.reply(buildStartMessage(), opts);
+
+  try {
+    await ctx.reply("👇 Меню", { reply_markup: mainKeyboard() });
+  } catch (err) {
+    const detail = err?.error?.description || err?.description || err?.message || err;
+    console.error("start keyboard failed:", detail);
+    try {
+      await ctx.reply("Открыть витрину:", { reply_markup: catalogKeyboard() });
+    } catch (err2) {
+      console.error("start inline fallback failed:", err2?.message || err2);
+    }
+  }
 }
 
 async function startBot() {
@@ -339,6 +384,7 @@ async function startBot() {
   }
   const bot = new Bot(BOT_TOKEN);
   const WEBAPP_URL = publicUrl();
+  console.log(`bot polling webapp=${WEBAPP_URL}`);
 
   const mainKeyboard = () =>
     new Keyboard()
@@ -355,8 +401,18 @@ async function startBot() {
 
   const catalogKeyboard = () => new InlineKeyboard().webApp("Открыть витрину", WEBAPP_URL);
 
+  bot.catch((err) => {
+    const detail = err.error?.description || err.message || err;
+    console.error("bot handler error:", detail);
+  });
+
   bot.command("start", async (ctx) => {
-    await sendStartMessage(ctx, mainKeyboard);
+    try {
+      await sendStartMessage(ctx, mainKeyboard, catalogKeyboard);
+    } catch (err) {
+      console.error("start command failed:", err?.message || err);
+      await ctx.reply(`Добро пожаловать в ${SHOP_NAME}!`).catch(() => {});
+    }
   });
 
   bot.command("menu", async (ctx) => {
