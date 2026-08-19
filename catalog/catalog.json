@@ -57,15 +57,31 @@
       ],
       "configs": [
         {
-          "id": "256",
+          "id": "256-dual-esim",
           "storage": "256GB",
+          "sim_type": "Dual eSIM",
           "price": 2150,
           "in_stock": true
         },
         {
-          "id": "512",
+          "id": "256-nano-esim",
+          "storage": "256GB",
+          "sim_type": "nano-SIM + eSIM",
+          "price": 2190,
+          "in_stock": true
+        },
+        {
+          "id": "512-dual-esim",
           "storage": "512GB",
+          "sim_type": "Dual eSIM",
           "price": 2490,
+          "in_stock": true
+        },
+        {
+          "id": "512-nano-esim",
+          "storage": "512GB",
+          "sim_type": "nano-SIM + eSIM",
+          "price": 2530,
           "in_stock": true
         }
       ],

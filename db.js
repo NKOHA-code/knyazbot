@@ -56,6 +56,7 @@ async function initDb() {
     await p.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS assigned_to BIGINT`);
     await p.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS assigned_name TEXT`);
     await p.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW()`);
+    await p.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS sim_type TEXT`);
 
     await p.query(`
       CREATE TABLE IF NOT EXISTS order_events (
@@ -116,10 +117,10 @@ async function saveOrder(order) {
   if (!p) return null;
   const result = await p.query(
     `INSERT INTO orders (
-      product_id, product_name, color_id, color_name, config_id, storage,
+      product_id, product_name, color_id, color_name, config_id, storage, sim_type,
       price, payment_id, payment_title, phone,
       telegram_user_id, telegram_username, telegram_full_name
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
     RETURNING id, created_at`,
     [
       order.product_id,
@@ -128,6 +129,7 @@ async function saveOrder(order) {
       order.color_name,
       order.config_id,
       order.storage,
+      order.sim_type || null,
       order.price,
       order.payment_id,
       order.payment_title,
@@ -205,7 +207,7 @@ async function listOrders({ status, q, product_id, period, limit = 50, offset = 
   params.push(lim);
   params.push(off);
   const result = await p.query(
-    `SELECT id, created_at, updated_at, product_id, product_name, color_id, color_name, config_id, storage,
+    `SELECT id, created_at, updated_at, product_id, product_name, color_id, color_name, config_id, storage, sim_type,
             price, payment_id, payment_title, phone,
             telegram_user_id, telegram_username, telegram_full_name, status,
             manager_note, assigned_to, assigned_name
@@ -440,6 +442,7 @@ function ordersToCsv(items) {
     "product_name",
     "color_name",
     "storage",
+    "sim_type",
     "price",
     "payment_title",
     "phone",

@@ -85,11 +85,15 @@ function getCatalog() {
   migrateLegacyUploads();
   const data = loadRawCatalog().data;
   data.products = (data.products || [])
-    .map((p, i) => ({
-      ...p,
-      hidden: Boolean(p.hidden),
-      sort_order: Number.isFinite(Number(p.sort_order)) ? Number(p.sort_order) : i,
-    }))
+    .map((p, i) => {
+      const product = {
+        ...p,
+        hidden: Boolean(p.hidden),
+        sort_order: Number.isFinite(Number(p.sort_order)) ? Number(p.sort_order) : i,
+      };
+      syncProductPriceMeta(product);
+      return product;
+    })
     .sort((a, b) => a.sort_order - b.sort_order || String(a.name).localeCompare(String(b.name), "ru"));
   try {
     data.fx = require("./fx-rates").getFxPublic();
@@ -130,6 +134,68 @@ function slugifyId(raw) {
     .slice(0, 48);
 }
 
+const SIM_PRESETS = [
+  { id: "dual-esim", label: "Dual eSIM" },
+  { id: "nano-esim", label: "nano-SIM + eSIM" },
+  { id: "dual-nano", label: "2× nano-SIM" },
+];
+
+function simSlug(simType) {
+  const s = String(simType || "").trim();
+  if (!s) return "";
+  const preset = SIM_PRESETS.find((p) => p.label.toLowerCase() === s.toLowerCase() || p.id === s);
+  if (preset) return preset.id;
+  return slugifyId(s);
+}
+
+function simLabel(simType) {
+  const s = String(simType || "").trim();
+  if (!s) return "";
+  const preset = SIM_PRESETS.find((p) => p.id === s || p.label.toLowerCase() === s.toLowerCase());
+  return preset ? preset.label : s;
+}
+
+function configToId(storage, simType) {
+  const base = storageToId(storage);
+  const sim = simSlug(simType);
+  return sim ? `${base}-${sim}` : base;
+}
+
+function syncProductPriceMeta(product) {
+  const priced = (product.configs || []).map((c) => Number(c.price) || 0).filter((n) => n > 0);
+  const min = priced.length ? Math.min(...priced) : null;
+  product.min_price = min;
+  product.price_from = min == null ? "цену уточнит менеджер" : `от ${min} BYN`;
+}
+
+function findConfig(product, storageRaw, simTypeRaw) {
+  const storage = String(storageRaw || "").trim();
+  const simType = String(simTypeRaw || "").trim();
+  if (!storage) return null;
+  const configs = product.configs || [];
+  if (simType) {
+    let cfg = configs.find(
+      (c) =>
+        String(c.storage || "").trim().toLowerCase() === storage.toLowerCase() &&
+        String(c.sim_type || "").trim().toLowerCase() === simType.toLowerCase()
+    );
+    if (cfg) return cfg;
+    const simId = simSlug(simType);
+    cfg = configs.find(
+      (c) =>
+        String(c.storage || "").trim().toLowerCase() === storage.toLowerCase() &&
+        simSlug(c.sim_type) === simId
+    );
+    if (cfg) return cfg;
+  }
+  const matches = configs.filter(
+    (c) => String(c.storage || "").trim().toLowerCase() === storage.toLowerCase()
+  );
+  if (matches.length === 1) return matches[0];
+  if (!simType && matches.length > 1) return null;
+  return findConfigByStorage(product, storage);
+}
+
 function upsertCategory(category) {
   const { data } = loadRawCatalog();
   if (!data.categories) data.categories = [];
@@ -166,6 +232,7 @@ function patchConfig(productId, configId, patch) {
   const cfg = (product.configs || []).find((c) => c.id === configId);
   if (!cfg) throw new Error("config not found");
   if (patch.storage !== undefined) cfg.storage = String(patch.storage);
+  if (patch.sim_type !== undefined) cfg.sim_type = String(patch.sim_type || "").trim() || undefined;
   if (patch.in_stock !== undefined) cfg.in_stock = Boolean(patch.in_stock);
 
   let fx;
@@ -189,6 +256,7 @@ function patchConfig(productId, configId, patch) {
   }
 
   saveCatalog(data);
+  syncProductPriceMeta(product);
   return product;
 }
 
@@ -197,16 +265,26 @@ function storageToId(storage) {
   return m ? m[1] : slugifyId(storage) || `cfg-${Date.now()}`;
 }
 
-function addConfig(productId, { storage, price, price_fx, in_stock } = {}) {
+function addConfig(productId, { storage, sim_type, price, price_fx, in_stock } = {}) {
   const { data } = loadRawCatalog();
   const product = data.products.find((p) => p.id === productId);
   if (!product) throw new Error("product not found");
   const stor = String(storage || "").trim();
   if (!stor) throw new Error("Укажи память, например 512GB");
+  const simType = String(sim_type || "").trim();
   if (!product.configs) product.configs = [];
-  let id = storageToId(stor);
-  if (product.configs.some((c) => c.id === id || c.storage === stor)) {
+  if (
+    product.configs.some(
+      (c) =>
+        String(c.storage || "").trim() === stor &&
+        String(c.sim_type || "").trim().toLowerCase() === simType.toLowerCase()
+    )
+  ) {
     throw new Error("Такой конфиг уже есть");
+  }
+  let id = configToId(stor, simType);
+  if (product.configs.some((c) => c.id === id)) {
+    id = `${id}-${Date.now().toString(36).slice(-4)}`;
   }
 
   let fx;
@@ -222,6 +300,7 @@ function addConfig(productId, { storage, price, price_fx, in_stock } = {}) {
     price: Number(price) || 0,
     in_stock: in_stock === undefined ? true : Boolean(in_stock),
   };
+  if (simType) cfg.sim_type = simType;
   if (price_fx !== undefined) {
     cfg.price_fx = Math.round(Number(price_fx) * 100) / 100 || 0;
     if (settings.enabled && settings.rate != null) fx.recalcConfigPrice(cfg, settings);
@@ -230,6 +309,7 @@ function addConfig(productId, { storage, price, price_fx, in_stock } = {}) {
   }
   product.configs.push(cfg);
   saveCatalog(data);
+  syncProductPriceMeta(product);
   return product;
 }
 
@@ -243,6 +323,7 @@ function deleteConfig(productId, configId) {
   if (!product.configs.length) {
     throw new Error("Нужен хотя бы один конфиг");
   }
+  syncProductPriceMeta(product);
   saveCatalog(data);
   return true;
 }
@@ -408,6 +489,7 @@ const IMPORT_HEADERS = [
   "color_name",
   "color_hex",
   "storage",
+  "sim_type",
   "price",
   "in_stock",
 ];
@@ -447,6 +529,7 @@ function buildCatalogTemplateBuffer() {
       color_name: "Black",
       color_hex: "#1c1c1e",
       storage: "256GB",
+      sim_type: "Dual eSIM",
       price: 2150,
       in_stock: "да",
     },
@@ -462,7 +545,25 @@ function buildCatalogTemplateBuffer() {
       color_id: "black",
       color_name: "Black",
       color_hex: "#1c1c1e",
+      storage: "256GB",
+      sim_type: "nano-SIM + eSIM",
+      price: 2190,
+      in_stock: "да",
+    },
+    {
+      id: "iphone-17",
+      name: "iPhone 17",
+      category: "iphone",
+      category_title: "iPhone",
+      badge: "Хит",
+      badge_emoji: "🔥",
+      gift: "чехол + защитное стекло",
+      note: "Новый оригинал, заводская упаковка",
+      color_id: "black",
+      color_name: "Black",
+      color_hex: "#1c1c1e",
       storage: "512GB",
+      sim_type: "Dual eSIM",
       price: 2490,
       in_stock: "да",
     },
@@ -479,6 +580,7 @@ function buildCatalogTemplateBuffer() {
       color_name: "White",
       color_hex: "#f2f2f7",
       storage: "256GB",
+      sim_type: "Dual eSIM",
       price: 2150,
       in_stock: "да",
     },
@@ -497,6 +599,7 @@ function buildCatalogTemplateBuffer() {
       color_name: "Black",
       color_hex: "#1c1c1e",
       storage: "256GB",
+      sim_type: "Dual eSIM / nano-SIM + eSIM",
       price: 0,
       in_stock: "да / нет",
     },
@@ -507,13 +610,14 @@ function buildCatalogTemplateBuffer() {
   XLSX.utils.book_append_sheet(wb, ws, "catalog");
   const noteRows = [
     ["Как заполнять"],
-    ["1. Одна строка = одна комбинация цвет + память."],
+    ["1. Одна строка = цвет + память + SIM (sim_type можно оставить пустым)."],
     ["2. Один и тот же id товара повторяй в нескольких строках для цветов и конфигов."],
-    ["3. category — латиницей (iphone). category_title — название на русском/как на витрине."],
-    ["4. in_stock: да / нет (или 1 / 0)."],
-    ["5. badge_emoji — смайлик рядом с бейджем (🔥, ✨, 💎…)."],
-    ["6. Фото после импорта загрузи в карточке товара (цвета сохранят старые фото, если id цвета совпал)."],
-    ["7. Строку-подсказку внизу шаблона перед импортом можно удалить."],
+    ["3. sim_type: Dual eSIM, nano-SIM + eSIM, 2× nano-SIM — если пусто, одна цена на память."],
+    ["4. category — латиницей (iphone). category_title — название на русском/как на витрине."],
+    ["5. in_stock: да / нет (или 1 / 0)."],
+    ["6. badge_emoji — смайлик рядом с бейджем (🔥, ✨, 💎…)."],
+    ["7. Фото после импорта загрузи в карточке товара."],
+    ["8. Строку-подсказку внизу шаблона перед импортом можно удалить."],
   ];
   const wsHelp = XLSX.utils.aoa_to_sheet(noteRows);
   wsHelp["!cols"] = [{ wch: 90 }];
@@ -606,11 +710,18 @@ function importCatalogFromExcel(buffer) {
 
     const storage = cell(row, "storage", "память", "config");
     if (storage) {
-      const cfgId = storageToConfigId(storage);
+      const simType = cell(row, "sim_type", "sim", "сим", "sim-карта");
+      const cfgId = configToId(storage, simType);
       const price = Number(cell(row, "price", "цена")) || 0;
       const inStock = parseStock(cell(row, "in_stock", "наличие", "stock"));
-      const cfgIdx = product.configs.findIndex((c) => c.id === cfgId || c.storage === storage);
+      const cfgIdx = product.configs.findIndex(
+        (c) =>
+          c.id === cfgId ||
+          (String(c.storage || "").trim() === storage &&
+            String(c.sim_type || "").trim().toLowerCase() === simType.toLowerCase())
+      );
       const cfgRow = { id: cfgId, storage, price, in_stock: inStock };
+      if (simType) cfgRow.sim_type = simType;
       if (cfgIdx >= 0) product.configs[cfgIdx] = cfgRow;
       else product.configs.push(cfgRow);
     }
@@ -628,6 +739,7 @@ function importCatalogFromExcel(buffer) {
       product.configs = [{ id: "256", storage: "256GB", price: 0, in_stock: true }];
     }
     if (!product.image) product.image = product.colors.find((c) => c.image)?.image || null;
+    syncProductPriceMeta(product);
 
     const idx = data.products.findIndex((p) => p.id === product.id);
     if (idx >= 0) {
@@ -754,6 +866,7 @@ function buildCatalogExportBuffer() {
           color_name: color.name || "",
           color_hex: color.hex || "",
           storage: cfg.storage || "",
+          sim_type: cfg.sim_type || "",
           price: cfg.price || 0,
           in_stock: cfg.in_stock ? "да" : "нет",
           hidden: p.hidden ? "да" : "нет",
@@ -773,7 +886,90 @@ function buildCatalogExportBuffer() {
   return XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
 }
 
-const PRICE_HEADERS = ["product_id", "name", "storage", "price", "price_fx", "in_stock"];
+function parsePriceByn(raw) {
+  const s = String(raw ?? "")
+    .replace(/\u00a0/g, " ")
+    .replace(/\s/g, "")
+    .replace(",", ".");
+  if (!s) return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+
+function findProductByRef(products, raw) {
+  const text = String(raw || "").trim();
+  if (!text) return null;
+  const id = slugifyId(text);
+  let product = products.find((p) => p.id === id);
+  if (product) return product;
+  const low = text.toLowerCase();
+  product = products.find((p) => String(p.name || "").trim().toLowerCase() === low);
+  if (product) return product;
+  product = products.find((p) => String(p.name || "").trim().toLowerCase().includes(low));
+  if (product) return product;
+  return products.find((p) => low.includes(String(p.name || "").trim().toLowerCase())) || null;
+}
+
+function configDisplayLabel(cfg) {
+  const storage = String(cfg?.storage || "").trim();
+  const sim = String(cfg?.sim_type || "").trim();
+  if (storage && sim) return `${storage} · ${sim}`;
+  return storage || sim || "—";
+}
+
+function findConfigByLabel(product, labelRaw, simTypeRaw = "") {
+  const label = String(labelRaw || "").trim();
+  const simType = String(simTypeRaw || "").trim();
+  if (!label && !simType) return null;
+  if (label.includes("·")) {
+    const parts = label.split("·").map((s) => s.trim());
+    if (parts.length >= 2) {
+      const cfg = findConfig(product, parts[0], parts.slice(1).join(" · "));
+      if (cfg) return cfg;
+    }
+  }
+  const cfg = findConfig(product, label, simType);
+  if (cfg) return cfg;
+  const low = label.toLowerCase();
+  const configs = product.configs || [];
+  let hit = configs.find((c) => String(c.storage || "").trim().toLowerCase() === low);
+  if (hit) return hit;
+  hit = configs.find((c) => configDisplayLabel(c).toLowerCase() === low);
+  if (hit) return hit;
+  hit = configs.find((c) => {
+    const stor = String(c.storage || "").trim().toLowerCase();
+    return stor === low || stor.includes(low) || low.includes(stor);
+  });
+  return hit || null;
+}
+
+function buildSimplePriceRows(data) {
+  const rows = [];
+  for (const p of data.products || []) {
+    for (const cfg of p.configs || []) {
+      rows.push({
+        название: p.name,
+        конфигурация: configDisplayLabel(cfg),
+        цена: cfg.price || 0,
+      });
+    }
+  }
+  return rows;
+}
+
+const SIMPLE_PRICE_EXAMPLE = [
+  { название: "AirPods Pro", конфигурация: "2 Pro Type-C", цена: 605 },
+  { название: "AirPods Pro", конфигурация: "3 Pro Type-C", цена: 750 },
+  { название: "AirPods 4", конфигурация: "Стандартная комплектация", цена: 455 },
+  { название: "AirPods 4 ANC", конфигурация: "Стандартная комплектация", цена: 595 },
+  { название: "AirPods Max 2024", конфигурация: "Blue USB-C", цена: 1625 },
+  { название: "AirPods Max 2024", конфигурация: "Midnight USB-C", цена: 1585 },
+  { название: "", конфигурация: "Orange USB-C", цена: 1535 },
+  { название: "", конфигурация: "Purple USB-C", цена: 1595 },
+];
+
+const PRICE_HEADERS = ["product_id", "name", "storage", "sim_type", "price", "price_fx", "in_stock"];
+const SIMPLE_PRICE_HEADERS = ["название", "конфигурация", "цена"];
 
 /** Daily price list: one row per product + storage (no colors). */
 function buildPricesExportBuffer() {
@@ -786,6 +982,7 @@ function buildPricesExportBuffer() {
         product_id: p.id,
         name: p.name,
         storage: cfg.storage || "",
+        sim_type: cfg.sim_type || "",
         price: cfg.price || 0,
         price_fx: cfg.price_fx != null ? cfg.price_fx : "",
         in_stock: cfg.in_stock ? "да" : "нет",
@@ -798,11 +995,22 @@ function buildPricesExportBuffer() {
   });
   ws["!cols"] = PRICE_HEADERS.map((h) => ({ wch: Math.max(12, h.length + 2) }));
   XLSX.utils.book_append_sheet(wb, ws, "prices");
+
+  const simpleRows = buildSimplePriceRows(data);
+  const wsSimple = XLSX.utils.json_to_sheet(
+    simpleRows.length ? simpleRows : SIMPLE_PRICE_EXAMPLE,
+    { header: SIMPLE_PRICE_HEADERS }
+  );
+  wsSimple["!cols"] = SIMPLE_PRICE_HEADERS.map((h) => ({ wch: Math.max(14, h.length + 2) }));
+  XLSX.utils.book_append_sheet(wb, wsSimple, "простой");
+
   const notes = [
     ["Ежедневный прайс (только цены)"],
-    ["1. Меняй колонку price (BYN на витрине)."],
-    ["2. Если включён курс НБРБ — можно править price_fx (USD/EUR), тогда BYN пересчитается."],
-    ["3. Не меняй product_id и storage — по ним ищется конфиг."],
+    ["Лист «prices» — технический (product_id + storage + sim_type)."],
+    ["Лист «простой» — как в вашем прайсе: название | конфигурация | цена."],
+    ["1. Меняй колонку price / цена (BYN на витрине)."],
+    ["2. Если включён курс — можно править price_fx (USD/EUR)."],
+    ["3. В «простом» можно оставить название пустым — возьмётся строкой выше."],
     ["4. Новые товары этим файлом не создаются — только обновление цен."],
     [`5. Сейчас FX: ${fx.enabled ? "вкл " + (fx.currency || "USD") : "выкл"}.`],
   ];
@@ -814,6 +1022,31 @@ function buildPricesExportBuffer() {
 
 function buildPricesTemplateBuffer() {
   return buildPricesExportBuffer();
+}
+
+function buildSimplePricesTemplateBuffer() {
+  const data = getCatalog();
+  const rows = buildSimplePriceRows(data);
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(
+    rows.length ? rows : SIMPLE_PRICE_EXAMPLE,
+    { header: SIMPLE_PRICE_HEADERS }
+  );
+  ws["!cols"] = SIMPLE_PRICE_HEADERS.map((h) => ({ wch: Math.max(14, h.length + 2) }));
+  XLSX.utils.book_append_sheet(wb, ws, "простой");
+  const notes = [
+    ["Простой прайс — как в таблице Князьmobile"],
+    ["название | конфигурация | цена"],
+    ["1. Название товара как на витрине (AirPods Pro, iPhone 17…)."],
+    ["2. Конфигурация = строка из прайса (2 Pro Type-C, Blue USB-C, 256GB · Dual eSIM)."],
+    ["3. Можно оставить «название» пустым — подставится блоком выше."],
+    ["4. Цены с пробелами (1 625) тоже читаются."],
+    ["5. Импорт: «Импорт цен» — подойдёт и этот файл, и полный knyaz-prices.xlsx."],
+  ];
+  const wsHelp = XLSX.utils.aoa_to_sheet(notes);
+  wsHelp["!cols"] = [{ wch: 90 }];
+  XLSX.utils.book_append_sheet(wb, wsHelp, "инструкция");
+  return XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
 }
 
 function findConfigByStorage(product, storageRaw) {
@@ -835,8 +1068,9 @@ function findConfigByStorage(product, storageRaw) {
 function importPricesOnly(buffer) {
   const wb = XLSX.read(buffer, { type: "buffer" });
   const sheetName =
-    wb.SheetNames.find((n) => ["prices", "price", "цены", "прайс"].includes(String(n).toLowerCase())) ||
-    wb.SheetNames[0];
+    wb.SheetNames.find((n) =>
+      ["простой", "simple", "prices", "price", "цены", "прайс"].includes(String(n).toLowerCase())
+    ) || wb.SheetNames[0];
   if (!sheetName) throw new Error("В файле нет листа");
   const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: "" });
   if (!rows.length) throw new Error("Пустой файл — нет строк");
@@ -851,24 +1085,35 @@ function importPricesOnly(buffer) {
   }
 
   const { data } = loadRawCatalog();
-  const byId = new Map((data.products || []).map((p) => [p.id, p]));
+  const products = data.products || [];
+  const byId = new Map(products.map((p) => [p.id, p]));
   let updated = 0;
   const missing = [];
+  let lastProductRef = "";
 
   for (const row of rows) {
     const productId = slugifyId(cell(row, "product_id", "id", "ID"));
-    const storage = cell(row, "storage", "память", "config", "конфиг");
-    if (!productId || !storage) continue;
-    if (productId.startsWith("←")) continue;
+    const nameRef = cell(row, "название", "name", "товар", "product_name", "модель");
+    if (nameRef) lastProductRef = nameRef;
+    const productRef = productId || nameRef || lastProductRef;
 
-    const product = byId.get(productId);
+    const configLabel =
+      cell(row, "конфигурация", "configuration", "вариант", "комплектация") ||
+      cell(row, "storage", "память", "config", "конфиг");
+    const simType = cell(row, "sim_type", "sim", "сим", "sim-карта");
+
+    if (!productRef || !configLabel) continue;
+    if (String(productRef).startsWith("←") || String(configLabel).startsWith("←")) continue;
+    if (/^как заполнять|^название \|/i.test(String(productRef))) continue;
+
+    const product = productId ? byId.get(productId) : findProductByRef(products, productRef);
     if (!product) {
-      missing.push(`${productId} / ${storage}`);
+      missing.push(`${productRef} / ${configLabel}`);
       continue;
     }
-    const cfg = findConfigByStorage(product, storage);
+    const cfg = findConfigByLabel(product, configLabel, simType);
     if (!cfg) {
-      missing.push(`${productId} / ${storage}`);
+      missing.push(`${product.name || productRef} / ${configLabel}`);
       continue;
     }
 
@@ -878,8 +1123,8 @@ function importPricesOnly(buffer) {
 
     let touched = false;
     if (fxRaw !== "") {
-      const fxVal = Number(String(fxRaw).replace(",", "."));
-      if (Number.isFinite(fxVal)) {
+      const fxVal = parsePriceByn(fxRaw);
+      if (fxVal != null) {
         cfg.price_fx = Math.round(fxVal * 100) / 100;
         if (fxSettings.enabled && fxSettings.rate != null && fxMod) {
           fxMod.recalcConfigPrice(cfg, fxSettings);
@@ -887,8 +1132,8 @@ function importPricesOnly(buffer) {
         touched = true;
       }
     } else if (priceRaw !== "") {
-      const byn = Number(String(priceRaw).replace(",", "."));
-      if (Number.isFinite(byn)) {
+      const byn = parsePriceByn(priceRaw);
+      if (byn != null) {
         cfg.price = Math.max(0, Math.round(byn));
         if (fxSettings.enabled && fxSettings.rate != null && fxMod) {
           cfg.price_fx = fxMod.fxFromByn(cfg.price, fxSettings.rate, fxSettings.rate_scale || 1);
@@ -904,12 +1149,7 @@ function importPricesOnly(buffer) {
 
     if (touched) {
       updated += 1;
-      const priced = (product.configs || []).map((c) => c.price).filter((n) => n > 0);
-      if (priced.length) {
-        const min = Math.min(...priced);
-        product.min_price = min;
-        product.price_from = `от ${min} BYN`;
-      }
+      syncProductPriceMeta(product);
     }
   }
 
@@ -941,6 +1181,7 @@ module.exports = {
   buildCatalogExportBuffer,
   buildPricesExportBuffer,
   buildPricesTemplateBuffer,
+  buildSimplePricesTemplateBuffer,
   importCatalogFromExcel,
   importPricesOnly,
   duplicateProduct,
@@ -951,4 +1192,7 @@ module.exports = {
   saveManagers,
   isAllowedAdminId,
   defaultManagers,
+  syncProductPriceMeta,
+  SIM_PRESETS,
+  simLabel,
 };

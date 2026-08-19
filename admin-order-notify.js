@@ -48,6 +48,7 @@ function buildAdminOrderNotify(order, opts = {}) {
     `📱 Товар: <b>${escapeHtml(order.productName || "")}</b>\n` +
     `🎨 Цвет: ${escapeHtml(order.colorName || "")}\n` +
     `💾 Память: ${escapeHtml(order.storage || "")}\n` +
+    (order.simType ? `📶 SIM: ${escapeHtml(order.simType)}\n` : "") +
     `💰 Цена: ${escapeHtml(order.priceText || "")}\n` +
     `💳 Оплата: <b>${escapeHtml(order.payment || "не указана")}</b>\n` +
     `📞 Телефон: ${phoneHtml}\n\n` +

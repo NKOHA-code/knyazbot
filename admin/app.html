@@ -383,6 +383,7 @@
     }
     .price-tile .stor { font-weight: 650; min-width: 64px; }
     .price-tile input[data-storage] { width: 90px; border-radius: 10px; font-weight: 650; }
+    .price-tile select[data-sim-type] { min-width: 140px; border-radius: 10px; background: #02140a; border: 1px solid var(--line); color: var(--text); padding: 8px 10px; }
     .price-tile input[data-price-fx] { width: 100px; border-radius: 10px; }
     .price-tile input[type=number] { width: 110px; border-radius: 10px; }
     .price-tile .del-mini, .color-tile .del-mini {
@@ -395,6 +396,7 @@
     }
     .add-row input { width: auto; min-width: 0; }
     .add-row input[data-new-storage], .add-row input[data-new-color-name] { flex: 1; min-width: 100px; }
+    .add-row input[data-new-sim], .add-row select[data-new-sim] { flex: 1; min-width: 140px; }
     .add-row input[data-new-price] { width: 100px; }
     .stock {
       display: inline-flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--muted);
@@ -610,11 +612,12 @@
                 <span class="chev" aria-hidden="true"></span>
               </button>
               <div class="side-card-body">
-                <div class="meta" style="margin-bottom:10px">
-                  Только цены: скачай → колонка price → импорт. Новые товары не создаёт.
-                </div>
-                <div class="side-fields">
-                  <a class="btn" id="prices-export" href="#" style="text-align:center;justify-content:center">Скачать прайс</a>
+              <div class="meta" style="margin-bottom:10px">
+                Только цены. Простой лист: название → конфигурация → цена (как в прайсе AirPods).
+              </div>
+              <div class="side-fields">
+                <a class="btn" id="prices-export" href="#" style="text-align:center;justify-content:center">Скачать прайс</a>
+                <a class="btn" id="prices-simple" href="#" style="text-align:center;justify-content:center">Простой шаблон</a>
                   <label class="file-btn" style="display:block;margin:0">
                     Импорт цен
                     <input type="file" id="prices-import" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden />
@@ -959,13 +962,13 @@
           const statusBtns = state.statuses.filter((s) => s !== st).map((s) =>
             `<button type="button" data-patch="${o.id}" data-status="${s}">${STATUS_LABELS[s] || s}</button>`
           ).join("");
-          const replyText = `Здравствуйте! По заявке #${o.id} (${o.product_name || ""}, ${o.color_name || ""}, ${o.storage || ""}). Менеджер КнязьMobile на связи.`;
+          const replyText = `Здравствуйте! По заявке #${o.id} (${o.product_name || ""}, ${o.color_name || ""}, ${o.storage || ""}${o.sim_type ? ", " + o.sim_type : ""}). Менеджер КнязьMobile на связи.`;
           return `<article class="card" data-order="${o.id}">
             <div class="card-top">
               <h2>#${o.id} · ${escapeHtml(o.product_name || "—")}</h2>
               <span class="badge ${st}">${STATUS_LABELS[st] || st}</span>
             </div>
-            <div class="muted">${escapeHtml(o.color_name || "—")} · ${escapeHtml(o.storage || "—")} · <b style="color:var(--text)">${priceText(o.price)}</b> · ${escapeHtml(o.payment_title || "")}</div>
+            <div class="muted">${escapeHtml(o.color_name || "—")} · ${escapeHtml(o.storage || "—")}${o.sim_type ? ` · ${escapeHtml(o.sim_type)}` : ""} · <b style="color:var(--text)">${priceText(o.price)}</b> · ${escapeHtml(o.payment_title || "")}</div>
             <div class="muted">📞 <a href="tel:${escapeAttr(o.phone)}" style="color:var(--accent)">${escapeHtml(o.phone)}</a>
               ${tgLink ? ` · <a href="${tgLink}" target="_blank" rel="noopener" style="color:var(--accent)">Написать в TG</a>` : ""}</div>
             <div class="muted">${escapeHtml(o.telegram_full_name || "—")} ${o.telegram_username ? "@"+escapeHtml(o.telegram_username) : ""} · ${fmtDate(o.created_at)}</div>
@@ -1168,9 +1171,16 @@
     function editorHtml(p) {
       const fxOn = Boolean(state.fx?.enabled || state.catalog?.fx?.enabled);
       const cur = state.fx?.currency || state.catalog?.fx?.currency || "USD";
+      const simOptions = (current) => {
+        const opts = ["", "Dual eSIM", "nano-SIM + eSIM", "2× nano-SIM"];
+        return opts.map((v) =>
+          `<option value="${escapeAttr(v)}" ${String(current || "") === v ? "selected" : ""}>${v || "— без SIM —"}</option>`
+        ).join("");
+      };
       const configs = (p.configs || []).map((c) => `
         <div class="price-tile" data-pid="${escapeAttr(p.id)}" data-cid="${escapeAttr(c.id)}">
           <input data-storage value="${escapeAttr(c.storage)}" placeholder="512GB" />
+          <select data-sim-type title="Тип SIM">${simOptions(c.sim_type)}</select>
           ${fxOn
             ? `<input type="number" step="0.01" data-price-fx value="${c.price_fx != null ? c.price_fx : ""}" title="цена ${cur}" placeholder="${cur}" />
                <span class="muted" style="font-size:.75rem;min-width:72px">${Number(c.price || 0)} BYN</span>`
@@ -1250,9 +1260,11 @@
         </div>
         <div class="p-section">
           <div class="p-section-title">Конфиги / цены${fxOn ? ` (база ${escapeHtml(cur)} → BYN по своему курсу)` : ""}</div>
+          <div class="meta" style="margin-bottom:8px">Память + SIM = отдельная цена. Цвет на цену не влияет.</div>
           <div class="price-grid">${configs || `<div class="muted">Нет конфигов</div>`}</div>
           <div class="add-row" data-pid="${escapeAttr(p.id)}">
             <input data-new-storage placeholder="512GB" />
+            <select data-new-sim title="Тип SIM">${simOptions("")}</select>
             <input type="number" step="${fxOn ? "0.01" : "1"}" data-new-price placeholder="${fxOn ? cur : "цена BYN"}" value="0" />
             <button type="button" class="primary" data-add-cfg>Добавить конфиг</button>
           </div>
@@ -1395,6 +1407,25 @@
         } catch (ex) { toast(ex.message); }
         return;
       }
+      if (e.target.id === "prices-simple" || e.target.closest("#prices-simple")) {
+        e.preventDefault();
+        try {
+          const res = await fetch(basePath() + "/api/catalog/prices-simple.xlsx", { credentials: "same-origin" });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.detail || "Не удалось скачать шаблон");
+          }
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "knyaz-prices-simple.xlsx";
+          a.click();
+          URL.revokeObjectURL(url);
+          toast("Простой шаблон скачан");
+        } catch (ex) { toast(ex.message); }
+        return;
+      }
       if (e.target.id === "bulk-prices" || e.target.closest("#bulk-prices")) {
         try {
           const result = await api("/api/catalog/bulk-prices", {
@@ -1499,6 +1530,7 @@
           const fxOn = Boolean(state.fx?.enabled || state.catalog?.fx?.enabled);
           const body = {
             storage: row.querySelector("[data-storage]")?.value?.trim() || undefined,
+            sim_type: row.querySelector("[data-sim-type]")?.value?.trim() || "",
             in_stock: row.querySelector("[data-stock]").checked,
           };
           if (fxOn && row.querySelector("[data-price-fx]")) {
@@ -1525,12 +1557,13 @@
         if (addCfg) {
           const row = addCfg.closest(".add-row");
           const storage = row.querySelector("[data-new-storage]").value.trim();
+          const simType = row.querySelector("[data-new-sim]")?.value?.trim() || "";
           const raw = Number(row.querySelector("[data-new-price]").value) || 0;
           if (!storage) return toast("Укажи память, например 512GB");
           const fxOn = Boolean(state.fx?.enabled || state.catalog?.fx?.enabled);
           const payload = fxOn
-            ? { storage, price_fx: raw, in_stock: true }
-            : { storage, price: raw, in_stock: true };
+            ? { storage, sim_type: simType, price_fx: raw, in_stock: true }
+            : { storage, sim_type: simType, price: raw, in_stock: true };
           await api(`/api/catalog/product/${row.dataset.pid}/config`, {
             method: "POST",
             body: JSON.stringify(payload),

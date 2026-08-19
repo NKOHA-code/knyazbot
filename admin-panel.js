@@ -691,6 +691,20 @@ function mountAdmin(app) {
     }
   });
 
+  app.get("/a/:path/api/catalog/prices-simple.xlsx", gatePath, requireAuth, (_req, res) => {
+    try {
+      const buf = catalogAdmin.buildSimplePricesTemplateBuffer();
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      res.setHeader("Content-Disposition", 'attachment; filename="knyaz-prices-simple.xlsx"');
+      res.send(buf);
+    } catch (err) {
+      res.status(500).json({ detail: err.message || "Ошибка шаблона цен" });
+    }
+  });
+
   app.post("/a/:path/api/catalog/import-prices", gatePath, requireAuth, (req, res) => {
     try {
       const raw = String((req.body && req.body.data) || "");

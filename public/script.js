@@ -16,6 +16,7 @@
     categoryId: "all",
     product: null,
     colorId: null,
+    storagePick: null,
     configId: null,
     paymentId: "cash",
   };
@@ -34,7 +35,10 @@
     detailGlow: document.getElementById("detail-glow"),
     colorList: document.getElementById("color-list"),
     colorName: document.getElementById("color-name"),
-    configList: document.getElementById("config-list"),
+    storageList: document.getElementById("storage-list"),
+    simBlock: document.getElementById("sim-block"),
+    simList: document.getElementById("sim-list"),
+    simName: document.getElementById("sim-name"),
     paymentList: document.getElementById("payment-list"),
     paymentName: document.getElementById("payment-name"),
     detailPrice: document.getElementById("detail-price"),
@@ -137,6 +141,48 @@
     return state.product?.configs.find((c) => c.id === state.configId) || null;
   }
 
+  function uniqueStorages(product) {
+    const seen = new Set();
+    const out = [];
+    for (const c of product?.configs || []) {
+      const s = String(c.storage || "").trim();
+      if (!s || seen.has(s)) continue;
+      seen.add(s);
+      out.push(s);
+    }
+    return out;
+  }
+
+  function configsForStorage(product, storage) {
+    return (product?.configs || []).filter((c) => String(c.storage || "").trim() === String(storage || "").trim());
+  }
+
+  function storageMinPrice(product, storage) {
+    const prices = configsForStorage(product, storage).map((c) => Number(c.price) || 0).filter((n) => n > 0);
+    return prices.length ? Math.min(...prices) : 0;
+  }
+
+  function needsSimPick(product, storage) {
+    const list = configsForStorage(product, storage);
+    return list.length > 1 || list.some((c) => c.sim_type);
+  }
+
+  function configSimLabel(config) {
+    return String(config?.sim_type || "").trim() || "Стандарт";
+  }
+
+  function syncConfigForStorage() {
+    const p = state.product;
+    if (!p || !state.storagePick) {
+      state.configId = null;
+      return;
+    }
+    const list = configsForStorage(p, state.storagePick);
+    const current = list.find((c) => c.id === state.configId);
+    if (current) return;
+    state.configId = list.find((c) => c.in_stock)?.id || list[0]?.id || null;
+  }
+
   function selectedColor() {
     return state.product?.colors.find((c) => c.id === state.colorId) || null;
   }
@@ -216,7 +262,8 @@
           .slice(0, 5)
           .map((c) => `<span class="swatch" style="background:${c.hex}" title="${c.name}"></span>`)
           .join("");
-        const configs = p.configs.map((c) => c.storage).join(" · ");
+        const storages = [...new Set((p.configs || []).map((c) => c.storage).filter(Boolean))];
+        const configs = storages.join(" · ");
         const badgeText = formatBadge(p);
         const badge = badgeText ? `<span class="badge">${badgeText}</span>` : "<span></span>";
         const img = productImage(p);
@@ -270,12 +317,37 @@
       .join("");
     els.colorName.textContent = color?.name || "";
 
-    els.configList.innerHTML = p.configs
-      .map((c) => {
-        const label = c.price > 0 ? `${c.storage} · ${c.price} BYN` : `${c.storage} · цена у менеджера`;
-        return `<button type="button" class="chip ${state.configId === c.id ? "active" : ""}" data-config="${c.id}" ${c.in_stock ? "" : "disabled"}>${label}</button>`;
+    const storages = uniqueStorages(p);
+    if (!state.storagePick || !storages.includes(state.storagePick)) {
+      state.storagePick = storages[0] || null;
+    }
+    syncConfigForStorage();
+
+    els.storageList.innerHTML = storages
+      .map((storage) => {
+        const min = storageMinPrice(p, storage);
+        const suffix = min > 0 ? ` · от ${min} BYN` : "";
+        return `<button type="button" class="chip ${state.storagePick === storage ? "active" : ""}" data-storage="${storage}">${storage}${suffix}</button>`;
       })
       .join("");
+
+    const simConfigs = configsForStorage(p, state.storagePick);
+    const showSim = needsSimPick(p, state.storagePick);
+    if (els.simBlock) els.simBlock.classList.toggle("hidden", !showSim);
+    if (showSim) {
+      els.simList.innerHTML = simConfigs
+        .map((c) => {
+          const label = configSimLabel(c);
+          const pricePart = c.price > 0 ? `${c.price} BYN` : "уточнит менеджер";
+          return `<button type="button" class="chip ${state.configId === c.id ? "active" : ""}" data-config="${c.id}" ${c.in_stock ? "" : "disabled"}>${label} · ${pricePart}</button>`;
+        })
+        .join("");
+      const cfg = selectedConfig();
+      if (els.simName) els.simName.textContent = cfg ? configSimLabel(cfg) : "";
+    } else if (els.simList) {
+      els.simList.innerHTML = "";
+      if (els.simName) els.simName.textContent = "";
+    }
 
     els.paymentList.innerHTML = (state.catalog.payments || [])
       .map(
@@ -313,7 +385,9 @@
     if (!product) return;
     state.product = product;
     state.colorId = product.colors[0]?.id || null;
-    state.configId = product.configs.find((c) => c.in_stock)?.id || product.configs[0]?.id || null;
+    state.storagePick = uniqueStorages(product)[0] || null;
+    const firstConfigs = configsForStorage(product, state.storagePick);
+    state.configId = firstConfigs.find((c) => c.in_stock)?.id || firstConfigs[0]?.id || null;
     state.paymentId = "cash";
     els.listView.classList.add("hidden");
     els.detailView.classList.remove("hidden");
@@ -322,8 +396,8 @@
   }
 
   async function submitOrder() {
-    if (!state.product || !state.colorId || !state.configId) {
-      toast("Выберите цвет и конфигурацию");
+    if (!state.product || !state.colorId || !state.configId || !state.storagePick) {
+      toast("Выберите цвет, память и SIM");
       return;
     }
     if (!state.paymentId) {
@@ -394,6 +468,13 @@
     const color = e.target.closest("[data-color]");
     if (color) {
       state.colorId = color.dataset.color;
+      renderDetail();
+      return;
+    }
+    const storage = e.target.closest("[data-storage]");
+    if (storage) {
+      state.storagePick = storage.dataset.storage;
+      syncConfigForStorage();
       renderDetail();
       return;
     }

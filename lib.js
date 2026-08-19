@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const express = require("express");
-const { Bot, InlineKeyboard, Keyboard } = require("grammy");
+const { Bot, InlineKeyboard, Keyboard, InputFile } = require("grammy");
 const { initDb, saveOrder } = require("./db");
 const { mountAdmin } = require("./admin-panel");
 const { buildAdminOrderNotify, adminPanelBaseUrl } = require("./admin-order-notify");
@@ -124,7 +124,7 @@ function parseInitData(initData, botToken) {
 }
 
 async function startHttp(botForNotify) {
-  console.log("КнязьMobile build=2026-08-01d (manual-fx-rate)");
+  console.log("КнязьMobile build=2026-08-19 (hybrid-sim-pricing)");
   await initDb();
   try {
     const cat = loadCatalog();
@@ -200,7 +200,7 @@ async function startHttp(botForNotify) {
         PAYMENT_TITLES[paymentId] ||
         "";
       if (!color || !config || !paymentId || !paymentTitle) {
-        return res.status(400).json({ detail: "Выберите цвет, память и оплату" });
+        return res.status(400).json({ detail: "Выберите цвет, память, SIM и оплату" });
       }
       console.log("order payment", { paymentId, paymentTitle, product: product.id });
 
@@ -222,6 +222,7 @@ async function startHttp(botForNotify) {
           color_name: color.name,
           config_id: config.id,
           storage: config.storage,
+          sim_type: config.sim_type || null,
           price: config.price || 0,
           payment_id: paymentId,
           payment_title: paymentTitle,
@@ -240,6 +241,7 @@ async function startHttp(botForNotify) {
         productName: product.name,
         colorName: color.name,
         storage: config.storage,
+        simType: config.sim_type || "",
         priceText: priceText(config.price),
         payment: paymentTitle,
         phone,
@@ -302,6 +304,34 @@ async function startHttp(botForNotify) {
   });
 }
 
+const BRAND_IMAGE = path.join(__dirname, "public", "images", "brand.png");
+
+function buildStartMessage() {
+  return (
+    `<b>👑 ${SHOP_NAME}</b>\n` +
+    `<i>Техника Apple · Samsung · аксессуары</i>\n\n` +
+    `✦ ───────────────── ✦\n\n` +
+    `📱 <b>Каталог</b> — актуальные цены и наличие\n` +
+    `⚡ <b>Заявка</b> — модель, цвет и память за минуту\n` +
+    `🚚 <b>Доставка</b> — бесплатно по Беларуси\n` +
+    `🛡 <b>Гарантия</b> — 12 месяцев + сервис\n` +
+    `💳 <b>Оплата</b> — карта, рассрочка, лизинг\n\n` +
+    `✦ ───────────────── ✦\n\n` +
+    `📍 ${SHOP_ADDRESS}\n` +
+    `📞 ${MANAGER_PHONE} · @${MANAGER_USERNAME}\n\n` +
+    `Нажмите <b>«📱 Открыть витрину»</b> 👇`
+  );
+}
+
+async function sendStartMessage(ctx, mainKeyboard) {
+  const opts = { parse_mode: "HTML", reply_markup: mainKeyboard() };
+  if (fs.existsSync(BRAND_IMAGE)) {
+    await ctx.replyWithPhoto(new InputFile(BRAND_IMAGE), { caption: buildStartMessage(), ...opts });
+    return;
+  }
+  await ctx.reply(buildStartMessage(), opts);
+}
+
 async function startBot() {
   if (!BOT_TOKEN) {
     console.error("BOT_TOKEN is required");
@@ -326,17 +356,14 @@ async function startBot() {
   const catalogKeyboard = () => new InlineKeyboard().webApp("Открыть витрину", WEBAPP_URL);
 
   bot.command("start", async (ctx) => {
-    await ctx.reply(
-      `👑 Добро пожаловать в <b>${SHOP_NAME}</b>!\n\n` +
-        `Откройте витрину: модель, цвет и память — заявка за минуту.\n\n` +
-        `Рассрочка и лизинг · доставка по РБ · гарантия`,
-      { parse_mode: "HTML", reply_markup: mainKeyboard() }
-    );
-    await ctx.reply("Витрина:", { reply_markup: catalogKeyboard() });
+    await sendStartMessage(ctx, mainKeyboard);
   });
 
   bot.command("menu", async (ctx) => {
-    await ctx.reply("Открыть витрину:", { reply_markup: catalogKeyboard() });
+    await ctx.reply(
+      `<b>📱 Каталог ${SHOP_NAME}</b>\n\nВыберите модель, цвет и память — заявка за минуту.`,
+      { parse_mode: "HTML", reply_markup: catalogKeyboard() }
+    );
   });
 
   bot.hears("❓ FAQ", async (ctx) => {
