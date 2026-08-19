@@ -209,7 +209,10 @@
     }
     if (!src) src = product.image || "";
     if (!src) return "";
-    // bust Telegram/WebView cache after regenerating color art
+    if (src.includes("/images/uploads/")) {
+      const sep = src.includes("?") ? "&" : "?";
+      return `${src}${sep}t=${Date.now()}`;
+    }
     return src.includes("?") ? src : `${src}?v=3`;
   }
 

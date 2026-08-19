@@ -62,31 +62,23 @@ function readJsonFile(file) {
 }
 
 function loadCatalog() {
-  const candidates = [
-    path.join(__dirname, "catalog", "catalog.json"),
-    path.join(__dirname, "public", "catalog.json"),
-    path.join(__dirname, "data", "catalog.json"),
-  ];
-  const file = candidates.find((p) => fs.existsSync(p));
-  if (!file) {
-    throw new Error("catalog.json not found (checked catalog/, public/, data/)");
-  }
-  console.log("catalog file:", file);
-  const raw = readJsonFile(file);
-  const products = raw.products
+  // Same source as admin: data/catalog.json first (uploads + live prices)
+  const data = catalogAdmin.getCatalog();
+  const products = (data.products || [])
     .filter((p) => !p.hidden)
     .map((p) => {
-    const priced = (p.configs || []).map((c) => c.price).filter((n) => n > 0);
-    const min = priced.length ? Math.min(...priced) : null;
-    return {
-      ...p,
-      min_price: min,
-      price_from: min == null ? "цену уточнит менеджер" : `от ${min} BYN`,
-    };
-  })
+      if (p.price_from && p.min_price != null) return p;
+      const priced = (p.configs || []).map((c) => c.price).filter((n) => n > 0);
+      const min = priced.length ? Math.min(...priced) : null;
+      return {
+        ...p,
+        min_price: min,
+        price_from: min == null ? "цену уточнит менеджер" : `от ${min} BYN`,
+      };
+    })
     .sort((a, b) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0));
   return {
-    categories: raw.categories,
+    categories: data.categories,
     products,
     payments: PAYMENTS,
     shop: {
@@ -129,7 +121,7 @@ async function startHttp(botForNotify) {
   await initDb();
   try {
     const cat = loadCatalog();
-    console.log("catalog OK products=", cat.products.length, "file=data/catalog.json");
+    console.log("catalog OK products=", cat.products.length, "file=data/catalog.json (live)");
   } catch (err) {
     console.error("catalog preload failed", err.message);
   }
