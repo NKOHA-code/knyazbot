@@ -32,6 +32,7 @@
     detailNote: document.getElementById("detail-note"),
     detailGift: document.getElementById("detail-gift"),
     detailImage: document.getElementById("detail-image"),
+    detailMedia: document.getElementById("detail-media"),
     detailGlow: document.getElementById("detail-glow"),
     colorList: document.getElementById("color-list"),
     colorName: document.getElementById("color-name"),
@@ -197,6 +198,10 @@
       .join("");
   }
 
+  function isUploadImage(src) {
+    return String(src || "").includes("/images/uploads/");
+  }
+
   function productImage(product, colorId) {
     let src = "";
     if (colorId) {
@@ -270,9 +275,10 @@
         const badgeText = formatBadge(p);
         const badge = badgeText ? `<span class="badge">${badgeText}</span>` : "<span></span>";
         const img = productImage(p);
+        const uploadPhoto = isUploadImage(img);
         return `
           <button type="button" class="card" data-product="${p.id}">
-            <div class="card-photo">
+            <div class="card-photo${uploadPhoto ? " card-photo--upload" : ""}">
               ${img ? `<img src="${img}" alt="${p.name}" loading="lazy" />` : ""}
             </div>
             <div class="card-body">
@@ -294,6 +300,9 @@
     const p = state.product;
     const color = selectedColor();
     const img = productImage(p, state.colorId);
+    if (els.detailMedia) {
+      els.detailMedia.classList.toggle("media--upload", isUploadImage(img));
+    }
     els.detailName.textContent = p.name;
     els.detailNote.textContent = p.note || "";
     setDetailImage(img, `${p.name} · ${color?.name || ""}`.trim());

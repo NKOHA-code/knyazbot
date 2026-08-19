@@ -167,6 +167,8 @@ body {
 .card-photo {
   position: relative;
   height: 190px;
+  display: grid;
+  place-items: center;
   background:
     radial-gradient(circle at 50% 20%, rgba(0, 168, 107, 0.22), transparent 55%),
     radial-gradient(circle at 80% 80%, rgba(212, 175, 55, 0.1), transparent 45%),
@@ -174,11 +176,23 @@ body {
   overflow: hidden;
 }
 
+.card-photo--upload {
+  background: #030a06;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+}
+
 .card-photo img {
   width: 100%;
   height: 100%;
   object-fit: contain;
   display: block;
+}
+
+.card-photo--upload img {
+  object-fit: cover;
+  object-position: center 50%;
+  transform: scale(1.08);
+  filter: saturate(1.04) contrast(1.02);
 }
 
 .card-body {
@@ -195,8 +209,8 @@ body {
 
 .media {
   position: relative;
-  margin: -4px -4px 14px;
-  border-radius: 18px;
+  margin: 0 0 14px;
+  border-radius: 20px;
   overflow: hidden;
   background:
     radial-gradient(circle at 50% 30%, rgba(0, 168, 107, 0.2), transparent 60%),
@@ -204,6 +218,17 @@ body {
   aspect-ratio: 4 / 5;
   max-height: 360px;
   border: 1px solid rgba(212, 175, 55, 0.18);
+  display: grid;
+  place-items: center;
+}
+
+.media--upload {
+  aspect-ratio: 1 / 1;
+  max-height: min(74vw, 340px);
+  margin-inline: auto;
+  width: 100%;
+  background: #030a06;
+  border-color: rgba(212, 175, 55, 0.14);
 }
 
 .media img {
@@ -214,6 +239,18 @@ body {
   object-fit: contain;
   display: block;
   transition: opacity 0.18s ease;
+}
+
+.media--upload img {
+  object-fit: cover;
+  object-position: center 46%;
+  transform: scale(1.05);
+  filter: saturate(1.04) contrast(1.02);
+}
+
+.media--upload .media-glow {
+  opacity: 0.18;
+  inset: 22% 24%;
 }
 
 .media-glow {
