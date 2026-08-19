@@ -144,6 +144,18 @@ async function saveOrder(order) {
 
 const ORDER_STATUSES = ["new", "in_progress", "done", "cancelled", "archived"];
 
+const ORDER_STATUS_LABELS = {
+  new: "Новая",
+  in_progress: "В работе",
+  done: "Готово",
+  cancelled: "Отмена",
+  archived: "Архив",
+};
+
+function statusLabel(status) {
+  return ORDER_STATUS_LABELS[status] || status;
+}
+
 function periodClause(period) {
   if (period === "today") return `created_at >= date_trunc('day', NOW())`;
   if (period === "week") return `created_at >= NOW() - INTERVAL '7 days'`;
@@ -273,7 +285,7 @@ async function updateOrder(id, patch = {}, meta = {}) {
       await addOrderEvent(id, {
         actor,
         kind: "status",
-        message: `${before.status} → ${patch.status}`,
+        message: `${statusLabel(before.status)} → ${statusLabel(patch.status)}`,
       });
     }
     if (patch.manager_note !== undefined && patch.manager_note !== before.manager_note) {
@@ -480,4 +492,6 @@ module.exports = {
   deleteFaq,
   ordersToCsv,
   ORDER_STATUSES,
+  ORDER_STATUS_LABELS,
+  statusLabel,
 };

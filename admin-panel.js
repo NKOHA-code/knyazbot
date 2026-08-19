@@ -11,6 +11,7 @@ const {
   deleteOrder,
   listOrderEvents,
   ORDER_STATUSES,
+  statusLabel,
   getPool,
   getOrderStats,
   listFaq,
@@ -361,7 +362,7 @@ function mountAdmin(app) {
       });
       if (patch.status) {
         await notifyTelegram(
-          `📋 Заявка <b>#${row.id}</b> → <b>${row.status}</b>\n` +
+          `📋 Заявка <b>#${row.id}</b> → <b>${statusLabel(row.status)}</b>\n` +
             `${row.product_name || ""} · ${row.phone || ""}\n` +
             `Кто: ${actorName(req)}`,
           allManagerChatIds()
