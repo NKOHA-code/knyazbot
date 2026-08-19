@@ -7,6 +7,7 @@ const { initDb, saveOrder } = require("./db");
 const { mountAdmin } = require("./admin-panel");
 const { buildAdminOrderNotify, adminPanelBaseUrl } = require("./admin-order-notify");
 const catalogAdmin = require("./catalog-admin");
+const { mountPhotoImportHandlers } = require("./bot-photo-import");
 const { startFxScheduler } = require("./fx-rates");
 
 const PORT = Number(process.env.PORT || 3000);
@@ -124,7 +125,7 @@ function parseInitData(initData, botToken) {
 }
 
 async function startHttp(botForNotify) {
-  console.log("КнязьMobile build=2026-08-19b (start-fix)");
+  console.log("КнязьMobile build=2026-08-19c (admin-photo-import)");
   await initDb();
   try {
     const cat = loadCatalog();
@@ -443,6 +444,8 @@ async function startBot() {
   bot.hears("👑 Менеджер", async (ctx) => {
     await ctx.reply("Напишите менеджеру:", { reply_markup: managerKeyboard() });
   });
+
+  mountPhotoImportHandlers(bot, BOT_TOKEN);
 
   await bot.api.deleteWebhook({ drop_pending_updates: true });
   bot.start({
